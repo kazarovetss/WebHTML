@@ -1,35 +1,40 @@
 ﻿<?php
+require_once "db_handler.php";
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $name = $_POST['username'];
-    $pass = $_POST['password'];
+function authenticate($pdo, $name, $pass) {
+    $sql = "SELECT * FROM users WHERE username = :username AND pass = :pass";
+    $stmt = $pdo->prepare($sql);
 
-    try {
-        require_once "db_handler.php";
-            $sql = "SELECT * FROM users WHERE username = :username AND pass = :pass";
-            $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':username', $name);
+    $stmt->bindParam(':pass', $pass);
 
-            $stmt->bindParam(':username', $name);
-            //ДОБАВИТЬ ХЭШИРОВАНИЕ ПАРОЛЕЙ? 
-            //$hashedPass = password_hash($pass, PASSWORD_DEFAULT); 
-            $stmt->bindParam(':pass', $pass);
+    $stmt->execute();
+    return $stmt->fetch();
+}
 
-            $stmt->execute();
+// Проверка наличия куки
+if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) {
+    $name = $_COOKIE['username'];
+    $pass = $_COOKIE['password'];
 
-            $user = $stmt->fetch();
-    
-            if ($user) {
-                //ДОБАВИТЬ ЗАВИСИМОСТЬ ОТ РОЛИ ПОЛЬЗОВАТЕЛЯ
-                header("Location: employee_window.php");
-            } else {
-                echo "Неверные имя пользователя или пароль";
-            }
-    } catch (PDOException $e) {
-        die("Query failed: " . $e->getMessage());
+    $user = authenticate($pdo, $name, $pass);
+
+    if ($user) {
+        // Пользователь успешно аутентифицирован с использованием куки
+        echo "Welcome back, " . htmlspecialchars($user['username']) . "!";
+        include "employee_window.php"; // Загружает пользовательскую страницу
+        exit;
+    } else {
+        // Печеньки недействительны, перенаправление на страницу авторизации
+        header("Location: login.php");
+        exit;
     }
 } else {
-    header("Location: authorization.php");
+    // Печенек нет, перенаправление на страницу авторизации
+    header("Location: login.php");
+    exit;
 }
+
 
 //АВТОРИЗАЦИЯ
 // function get_user(object $pdo, string $name){
