@@ -22,7 +22,23 @@ if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) {
     if ($user) {
         // Пользователь успешно аутентифицирован с использованием куки
         echo "Welcome back, " . htmlspecialchars($user['username']) . "!";
-        include "employee_window.php"; // Загружает пользовательскую страницу
+        $role_id = $user['role_id'];
+
+        // Загружаем окно в зависимости от роли пользователя
+        switch ($role_id) {
+            case 1:
+                include "head_window.php"; // Окно для директора
+                break;
+            case 2:
+                include "admin_window.php"; // Окно для админа
+                break;
+            case 3:
+                include "employee_window.php"; // Окно для обычного сотрудника
+                break;
+            default:
+                echo "Unknown role"; // Если роль не определена
+        }
+
         exit;
     } else {
         // Печеньки недействительны, перенаправление на страницу авторизации
