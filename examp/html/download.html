@@ -1,0 +1,33 @@
+<section class="filter">
+    <form action="download.php" method="get">
+        <label for="pr_id">Project ID:</label>
+        <input type="text" name="pr_id" id="pr_id" value="{PROJECT}">
+        
+        <label for="mcu_id">MCU ID:</label>
+        <input type="text" name="mcu_id" id="mcu_id" value="{MCU_ID}">
+        
+        <label for="date_fr">Date From:</label>
+        <input type="date" name="date_fr" id="date_fr" value="{DATEFROM}">
+        
+        <label for="date_to">Date To:</label>
+        <input type="date" name="date_to" id="date_to" value="{DATETO}">
+        
+        <label for="majfrom">Major Version From:</label>
+        <input type="number" name="ma_fr" id="majfrom" value="{MAJFROM}">
+        
+        <label for="majto">Major Version To:</label>
+        <input type="number" name="ma_to" id="majto" value="{MAJTO}">
+        
+        <label for="minfrom">Minor Version From:</label>
+        <input type="number" name="mi_fr" id="minfrom" value="{MINFROM}">
+        
+        <label for="minto">Minor Version To:</label>
+        <input type="number" name="mi_to" id="minto" value="{MINTO}">
+        
+        <button type="submit" name="submit_btn">Apply</button>
+    </form>
+</section>
+
+<section class="table-section">
+    {TABLE}
+</section>
