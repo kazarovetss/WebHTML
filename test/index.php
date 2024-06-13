@@ -70,7 +70,62 @@ try {
             $stmtUser->execute();
         }
     }
+    // Проверка куки для автоматической авторизации
+if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) {
+    $username = $_COOKIE['username'];
+    $password = $_COOKIE['password'];
 
+    $stmtAuth = $db->prepare('SELECT * FROM users WHERE username = :username AND pass = :pass');
+    $stmtAuth->bindValue(':username', $username, SQLITE3_TEXT);
+    $stmtAuth->bindValue(':pass', $password, SQLITE3_TEXT);
+    $result = $stmtAuth->execute();
+
+    if ($user = $result->fetchArray(SQLITE3_ASSOC)) {
+        // Пользователь найден, установка сессии
+        $_SESSION['user_id'] = $user['user_id'];
+        $_SESSION['username'] = $user['username'];
+        $_SESSION['role_id'] = $user['role_id'];
+
+        // Вывод нужной страницы в зависимости от роли
+        switch ($user['role_id']) {
+            case 1:
+                $header = file_get_contents("html/header.html");
+                $body = file_get_contents("html/body-head.html");
+                $date = file_get_contents("html/date.html");
+                $body = str_replace("{DATE}", $date, $body);
+                echo $header;
+                echo $body;
+                exit();
+            case 2:
+                $header = file_get_contents("html/header.html");
+                $body = file_get_contents("html/body-admin.html");
+                $date = file_get_contents("html/date.html");
+                $body = str_replace("{DATE}", $date, $body);
+                echo $header;
+                echo $body;
+                exit();
+            case 3:
+                $header = file_get_contents("html/header.html");
+                $body = file_get_contents("html/body-employee.html");
+                $date = file_get_contents("html/date.html");
+                $body = str_replace("{DATE}", $date, $body);
+                echo $header;
+                echo $body;
+                exit();
+            default:
+                echo "Unknown role";
+                exit();
+        }
+    } else {
+        // Очистка куки если пользователь не найден
+        setcookie("username", "", time() - 3600, "/");
+        setcookie("password", "", time() - 3600, "/");
+        
+        $author = file_get_contents("html/authorization.html");
+        echo $author;
+        exit();
+    }
+} else {
     // Обработка данных формы авторизации
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username = $_POST['username'];
@@ -83,13 +138,15 @@ try {
         $result = $stmtAuth->execute();
 
         if ($user = $result->fetchArray(SQLITE3_ASSOC)) {
-            // Пользователь найден, установка сессии на 30 дней?
+            // Пользователь найден, установка сессии и куки
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role_id'] = $user['role_id'];
 
-            echo "Добро пожаловать, " . htmlspecialchars($user['username']) . "!";
-           
+            setcookie("username", $username, time() + (30 * 24 * 60 * 60), "/");
+            setcookie("password", $password, time() + (30 * 24 * 60 * 60), "/");
+
+            // Вывод нужной страницы в зависимости от роли
             switch ($user['role_id']) {
                 case 1:
                     $header = file_get_contents("html/header.html");
@@ -98,7 +155,7 @@ try {
                     $body = str_replace("{DATE}", $date, $body);
                     echo $header;
                     echo $body;
-                    break;
+                    exit();
                 case 2:
                     $header = file_get_contents("html/header.html");
                     $body = file_get_contents("html/body-admin.html");
@@ -106,7 +163,7 @@ try {
                     $body = str_replace("{DATE}", $date, $body);
                     echo $header;
                     echo $body;
-                    break;
+                    exit();
                 case 3:
                     $header = file_get_contents("html/header.html");
                     $body = file_get_contents("html/body-employee.html");
@@ -114,17 +171,21 @@ try {
                     $body = str_replace("{DATE}", $date, $body);
                     echo $header;
                     echo $body;
-                    break;
+                    exit();
                 default:
-                    echo "Unknown role"; // Если роль не определена? Опять авторизация
+                    echo "Unknown role";
+                    exit();
             }
         } else {
-            echo 'Неверное имя пользователя или пароль.';
+            echo "Неверное имя пользователя или пароль.";
         }
     } else {
+        // Вывод страницы авторизации
         $author = file_get_contents("html/authorization.html");
         echo $author;
     }
+}
+
 } catch (Exception $e) {
     echo "Не удалось открыть базу данных: " . $e->getMessage();
 }
