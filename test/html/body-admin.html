@@ -32,6 +32,26 @@
         <button id="Save" class="button">Сохранить</button>
       </div>
     </div>
+    <div class="exit">
+      <button id="Exit" class="button" type="submit">&laquo;</button>
+  </div>
+  <script>
+    document.getElementById('Exit').addEventListener('click', function() {
+        // Создаем форму и отправляем POST-запрос
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = ''; 
+
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'logout';
+        input.value = '1';
+
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    });
+</script>
   </div>
 </main>
 </body>

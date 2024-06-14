@@ -29,7 +29,7 @@ try {
         FOREIGN KEY (role_id) REFERENCES roles(role_id)
     )");
 
-    $names = ['head', 'admin', 'user'];
+    $names = array('head', 'admin', 'user');
 
     // Подготовка выражения для проверки существования роли
     $checkRole = $db->prepare('SELECT COUNT(*) AS count FROM roles WHERE name = :name');
@@ -47,11 +47,10 @@ try {
         }
     }
 
-    $users = [
-        ['username' => 'head', 'pass' => 'passhead', 'role_id' => 1],
+    $users = array(['username' => 'head', 'pass' => 'passhead', 'role_id' => 1],
         ['username' => 'admin', 'pass' => 'passadmin', 'role_id' => 2],
-        ['username' => 'user', 'pass' => 'passuser', 'role_id' => 3],
-    ];
+        ['username' => 'user', 'pass' => 'passuser', 'role_id' => 3],);
+
 
     // Подготовка выражения для проверки существования пользователя
     $checkUser = $db->prepare('SELECT COUNT(*) AS count FROM users WHERE username = :username');
@@ -72,6 +71,18 @@ try {
     }
     // Проверка куки для автоматической авторизации
 if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) {
+    
+    if (isset($_POST['logout'])) {
+        // Обработка выхода
+        session_unset();
+        session_destroy();
+        setcookie("username", "", time() - 3600, "/");
+        setcookie("password", "", time() - 3600, "/");
+        $author = file_get_contents("html/authorization.html");
+        echo $author;
+        exit();
+    }
+    
     $username = $_COOKIE['username'];
     $password = $_COOKIE['password'];
 
@@ -128,6 +139,7 @@ if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) {
 } else {
     // Обработка данных формы авторизации
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        
         $username = $_POST['username'];
         $password = $_POST['password'];
 
