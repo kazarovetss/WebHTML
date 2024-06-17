@@ -1,20 +1,51 @@
-﻿header {
+﻿body {
+    font-family: Arial, sans-serif;
+    background-color: #808080;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Стили для header */
+header {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
     padding: 10px;
     background-color: #f3f3f3;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .logo-container {
-    width: 50px;
+    width: 150px;
     height: auto;
+    display: flex;
+    align-items: center;
 }
 
 .logo {
     width: 100%;
     height: auto;
+}
+
+.company-info, .login-info {
+    flex-grow: 1;
+    text-align: center;
+}
+
+.company-info {
+    text-align: center;
+    font-weight: bold;
+}
+
+.login-info {
+    text-align: right;
 }
 
 a {
@@ -25,6 +56,18 @@ a {
 a:hover {
     text-decoration: underline;
 }
+
+main {
+    width: 80%;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: #f0f0f0;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
 
 .main-container {
     display: flex;
@@ -63,22 +106,29 @@ a:hover {
     overflow-y: auto;
 }
 
-.enter-field {
+.enter-container {
     display: flex;
-    height: 60%;
+    flex-direction: column;
+    flex-grow: 1;
 }
 
-#field {
+.enter-field {
+    display: flex;
+    height: 400px;
+    margin-bottom: 10px;
+}
+
+textarea#field {
+    width: 100%;
     height: 100%;
-    width: 62%;
-    text-align: start;
-    box-sizing: border-box;
-    padding: 5px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
     resize: none;
     overflow: auto;
     white-space: pre-wrap;
     word-break: break-word;
-    margin-right: 20px;
+    box-sizing: border-box;
 }
 
 #stat{
@@ -86,16 +136,70 @@ a:hover {
     width: 100%;
     padding: 5px;
     border: 1px solid black;
+    margin-left: 20px;
 }
 
 .buttons {
     display: flex;
     justify-content: flex-start;
-    margin-top: 30px;
+    gap: 10px;
 }
 
-
-.button{
-    margin-right: 10px;
+.button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
+.button:hover {
+    background-color: #0056b3;
+}
+
+/* Кнопка очистки */
+#Clean {
+    background-color: #dc3545;
+}
+
+#Clean:hover {
+    background-color: #c82333;
+}
+
+#Get{
+    background-color: #4caf50;
+}
+
+#Get:hover{
+    background-color: #43a047;
+}
+
+#Save{
+    background-color: #00bcd4;
+}
+
+#Save:hover{
+    background-color: #00acc1;
+}
+
+#Send{
+    background-color: #007bff;
+}
+
+#Send:hover{
+    background-color: #0056b3;
+}
+
+.exit .button {
+    background-color: #dc3545;
+}
+
+.exit .button:hover {
+    background-color: #c82333;
+}
+
+.isHeadVersion{
+    align-items: center;
+}
