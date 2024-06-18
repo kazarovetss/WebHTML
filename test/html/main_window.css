@@ -65,7 +65,7 @@ main {
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
-    margin-top: 10px;
+    margin-top:10px;
 }
 
 
@@ -201,5 +201,5 @@ textarea#field {
 }
 
 .isHeadVersion{
-    align-items: center;
+    padding: 10px 0px;
 }

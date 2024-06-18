@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_set_cookie_params([
     'lifetime' => 30 * 24 * 60 * 60, // 30 дней в секундах
 ]);
