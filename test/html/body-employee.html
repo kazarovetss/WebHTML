@@ -16,10 +16,32 @@
                     <textarea type="text" id="field"></textarea>
                 </div>
                 <div class="buttons">
-                    <button id="Send" class="button" type="submit">Отправить</button>
+                    <button id="Send" class="button" type="submit" onclick="sendReport()">Отправить</button>
                     <button id="Clean" class="button" onclick="document.getElementById('field').value = '';">Очистить</button>
                 </div>
         </div>
+        <script>
+            async function sendReport() {
+                const reportText = document.getElementById('field').value;
+        
+                const response = await fetch('/submit_report', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ report_text: reportText })
+                });
+        
+                if (response.ok) {
+                    alert('Отчет отправлен успешно!');
+                    document.getElementById('field').value = '';
+                } else {
+                    const errorText = await response.text();
+                    console.error('Ошибка отправки отчета:', response.status, response.statusText, errorText);
+                    alert('Ошибка отправки отчета: ' + errorText);
+                }
+            }
+        </script>        
         <div class="exit">
             <button id="Exit" class="button" type="submit">&laquo;</button>
         </div>
