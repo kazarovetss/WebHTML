@@ -1,7 +1,7 @@
 ﻿<?php
-session_set_cookie_params([
-    'lifetime' => 30 * 24 * 60 * 60, // 30 дней в секундах
-]);
+session_set_cookie_params(
+    array('lifetime' => 30 * 24 * 60 * 60) // 30 дней в секундах
+);
 
 session_start();
 set_time_limit(0);
@@ -15,7 +15,7 @@ try {
     $db = new SQLite3($dbPath);
 
     // Обработка отправки отчетов
-    if ($_SERVER['REQUEST_URI'] === '/submit_report' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Content-Type: application/json');
 
         $data = json_decode(file_get_contents('php://input'), true);
@@ -31,12 +31,12 @@ try {
             $stmt->bindValue(':send_date', date('Y-m-d H:i:s'), SQLITE3_TEXT);
 
             if ($stmt->execute()) {
-                echo json_encode(['status' => 'success']);
+                echo json_encode(array('status' => 'success'));
             } else {
-                echo json_encode(['status' => 'error', 'message' => 'Failed to execute statement']);
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to execute statement'));
             }
         } else {
-            echo json_encode(['status' => 'error', 'message' => 'Unauthorized or invalid data']);
+            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized or invalid data'));
         }
         exit();
     }
@@ -83,9 +83,9 @@ try {
     }
 
     $users = array(
-        ['username' => 'head', 'pass' => 'passhead', 'role_id' => 1],
-        ['username' => 'admin', 'pass' => 'passadmin', 'role_id' => 2],
-        ['username' => 'user', 'pass' => 'passuser', 'role_id' => 3],
+        array('username' => 'head', 'pass' => 'passhead', 'role_id' => 1),
+        array('username' => 'admin', 'pass' => 'passadmin', 'role_id' => 2),
+        array('username' => 'user', 'pass' => 'passuser', 'role_id' => 3)
     );
 
     // Подготовка выражения для проверки существования пользователя
@@ -137,27 +137,24 @@ try {
             // Вывод нужной страницы в зависимости от роли
             switch ($user['role_id']) {
                 case 1:
-                    $header = file_get_contents("html/header.html");
+                    include("html/header.php");
                     $body = file_get_contents("html/body-head.html");
                     $date = file_get_contents("html/date.html");
                     $body = str_replace("{DATE}", $date, $body);
-                    echo $header;
                     echo $body;
                     exit();
                 case 2:
-                    $header = file_get_contents("html/header.html");
+                    include("html/header.php");
                     $body = file_get_contents("html/body-admin.html");
                     $date = file_get_contents("html/date.html");
                     $body = str_replace("{DATE}", $date, $body);
-                    echo $header;
                     echo $body;
                     exit();
                 case 3:
-                    $header = file_get_contents("html/header.html");
+                    include("html/header.php");
                     $body = file_get_contents("html/body-employee.html");
                     $date = file_get_contents("html/date.html");
                     $body = str_replace("{DATE}", $date, $body);
-                    echo $header;
                     echo $body;
                     exit();
                 default:
@@ -198,27 +195,24 @@ try {
                 // Вывод нужной страницы в зависимости от роли
                 switch ($user['role_id']) {
                     case 1:
-                        $header = file_get_contents("html/header.html");
+                        include("html/header.php");
                         $body = file_get_contents("html/body-head.html");
                         $date = file_get_contents("html/date.html");
                         $body = str_replace("{DATE}", $date, $body);
-                        echo $header;
                         echo $body;
                         exit();
                     case 2:
-                        $header = file_get_contents("html/header.html");
+                        include("html/header.php");
                         $body = file_get_contents("html/body-admin.html");
                         $date = file_get_contents("html/date.html");
                         $body = str_replace("{DATE}", $date, $body);
-                        echo $header;
                         echo $body;
                         exit();
                     case 3:
-                        $header = file_get_contents("html/header.html");
+                        include("html/header.php");
                         $body = file_get_contents("html/body-employee.html");
                         $date = file_get_contents("html/date.html");
                         $body = str_replace("{DATE}", $date, $body);
-                        echo $header;
                         echo $body;
                         exit();
                     default:

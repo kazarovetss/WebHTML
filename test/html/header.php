@@ -8,13 +8,19 @@
 <body>
 <header>
     <div class = "logo-container">
-        <img src="" alt="Логотип компании" class="logo">
+        <img src="src/logo.png" alt="Логотип компании" class="logo">
     </div>
     <div class="company-info">
         {company-info}
     </div>
     <div class="login-info">
-        {login-info}
+        <?php
+        if (isset($_SESSION['username'])) {
+            echo "Авторизирован как " . htmlspecialchars($_SESSION['username']);
+        } else {
+            echo "Не авторизирован";
+        }
+        ?>
     </div>
 </header>
 </body>

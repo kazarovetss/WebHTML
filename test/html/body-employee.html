@@ -24,7 +24,7 @@
             async function sendReport() {
                 const reportText = document.getElementById('field').value;
         
-                const response = await fetch('/submit_report', {
+                const response = await fetch('index.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -41,7 +41,8 @@
                     alert('Ошибка отправки отчета: ' + errorText);
                 }
             }
-        </script>        
+        </script>
+        
         <div class="exit">
             <button id="Exit" class="button" type="submit">&laquo;</button>
         </div>

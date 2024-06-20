@@ -16,7 +16,7 @@ header {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: 10px;
+    padding: 10px 30px;
     background-color: #f3f3f3;
     width: 100%;
     box-sizing: border-box;
@@ -30,7 +30,7 @@ header {
 }
 
 .logo {
-    width: 100%;
+    width: 50%;
     height: auto;
 }
 
