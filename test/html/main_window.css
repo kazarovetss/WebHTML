@@ -93,7 +93,7 @@ main {
     border: 1px solid black;
     margin-bottom: 10px;
     padding: 5px;
-    width:60%;
+    width:92%;
 }
 
 
@@ -104,6 +104,26 @@ main {
     padding: 5px;
     height: 400px;
     overflow-y: auto;
+}
+
+.mounth span {
+    padding: 5px 0px;
+    margin-right: 10px;
+    color: gray;
+    font-size: large;
+}
+
+.mounth a {
+    margin-right: 10px;
+    color: blue;
+    text-decoration: none;
+    padding: 3px 0px;
+    font-size: large;
+}
+
+.mounth a:hover {
+    text-decoration: underline;
+    color: darkblue;
 }
 
 .enter-container {
@@ -203,3 +223,4 @@ textarea#field {
 .isHeadVersion{
     padding: 10px 0px;
 }
+

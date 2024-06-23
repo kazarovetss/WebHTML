@@ -24,6 +24,53 @@ function _getUsrNameFromDB($db, $userId) {
     return $user ? $user['username'] : 'Unknown';
 }
 
+function _getAvailableMonths($db, $userId) {
+    $stmt = $db->prepare('SELECT DISTINCT strftime("%Y-%m", send_date) as month FROM reports WHERE user_id = :user_id ORDER BY month');
+    $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
+    $result = $stmt->execute();
+    $months = [];
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        $months[] = $row['month'];
+    }
+    return $months;
+}
+
+function _generateMonthsHtml($db, $userId) {
+    $availableMonths = _getAvailableMonths($db, $userId);
+    $allMonths = array(
+        '01' => 'Январь', '02' => 'Февраль', '03' => 'Март', '04' => 'Апрель',
+        '05' => 'Май', '06' => 'Июнь', '07' => 'Июль', '08' => 'Август',
+        '09' => 'Сентябрь', '10' => 'Октябрь', '11' => 'Ноябрь', '12' => 'Декабрь'
+    );
+
+    $years = [];
+    foreach ($availableMonths as $month) {
+        list($year, $monthNum) = explode('-', $month);
+        if (!isset($years[$year])) {
+            $years[$year] = [];
+        }
+        $years[$year][] = $monthNum;
+    }
+
+    $html = '';
+    foreach ($years as $year => $months) {
+        $monthLinks = '';
+        foreach ($allMonths as $num => $name) {
+            if (in_array($num, $months)) {
+                $monthLinks .= "<a href='index.php?year=$year&month=$num'>$name</a> ";
+            } else {
+                $monthLinks .= "<span>$name</span> ";
+            }
+        }
+        $yearHtml = file_get_contents("html/date.html");
+        $yearHtml = str_replace("{YEAR}", $year, $yearHtml);
+        $yearHtml = str_replace("{MOUNTH}", $monthLinks, $yearHtml);
+        $html .= $yearHtml;
+    }
+    return $html;
+}
+
+
 try {
     $db = new SQLite3($dbPath);
 
@@ -151,35 +198,41 @@ try {
                 case 1:
                     $header = _loadHtmlPattern();
                     $username = _getUsrNameFromDB($db, $_SESSION['user_id']);
-                    $user_info = "<div>Добро пожаловать, ".$username."!</div>";
-                    $header = str_replace("{LOGIN-INFO}", $user_info, $header );
+                    $user_info = "<div>Добро пожаловать, " . $username . "!</div>";
+                    $header = str_replace("{LOGIN-INFO}", $user_info, $header);
                     echo $header;
-                    $body = file_get_contents("html/body-head.html");
-                    $date = file_get_contents("html/date.html");
-                    $body = str_replace("{DATE}", $date, $body);
+
+                    $monthsHtml = _generateMonthsHtml($db, $_SESSION['user_id']);
+                    $body = file_get_contents("html/body-employee.html");
+                    $body = str_replace("{DATE}", $monthsHtml, $body);
                     echo $body;
+
                     exit();
                 case 2:
                     $header = _loadHtmlPattern();
                     $username = _getUsrNameFromDB($db, $_SESSION['user_id']);
-                    $user_info = "<div>Добро пожаловать, ".$username."!</div>";
-                    $header = str_replace("{LOGIN-INFO}", $user_info, $header );
+                    $user_info = "<div>Добро пожаловать, " . $username . "!</div>";
+                    $header = str_replace("{LOGIN-INFO}", $user_info, $header);
                     echo $header;
+
+                    $monthsHtml = _generateMonthsHtml($db, $_SESSION['user_id']);
                     $body = file_get_contents("html/body-admin.html");
-                    $date = file_get_contents("html/date.html");
-                    $body = str_replace("{DATE}", $date, $body);
+                    $body = str_replace("{DATE}", $monthsHtml, $body);
                     echo $body;
+
                     exit();
                 case 3:
                     $header = _loadHtmlPattern();
                     $username = _getUsrNameFromDB($db, $_SESSION['user_id']);
-                    $user_info = "<div>Добро пожаловать, ".$username."!</div>";
-                    $header = str_replace("{LOGIN-INFO}", $user_info, $header );
+                    $user_info = "<div>Добро пожаловать, " . $username . "!</div>";
+                    $header = str_replace("{LOGIN-INFO}", $user_info, $header);
                     echo $header;
-                    $body = file_get_contents("html/body-employee.html");
-                    $date = file_get_contents("html/date.html");
-                    $body = str_replace("{DATE}", $date, $body);
+
+                    $monthsHtml = _generateMonthsHtml($db, $_SESSION['user_id']);
+                    $body = file_get_contents("html/body-head.html");
+                    $body = str_replace("{DATE}", $monthsHtml, $body);
                     echo $body;
+
                     exit();
                 default:
                     echo "Unknown role";
@@ -221,42 +274,51 @@ try {
                     case 1:
                         $header = _loadHtmlPattern();
                         $username = _getUsrNameFromDB($db, $_SESSION['user_id']);
-                        $user_info = "<div>Добро пожаловать, ".$username."!</div>";
-                        $header = str_replace("{LOGIN-INFO}", $user_info, $header );
+                        $user_info = "<div>Добро пожаловать, " . $username . "!</div>";
+                        $header = str_replace("{LOGIN-INFO}", $user_info, $header);
                         echo $header;
-                        $body = file_get_contents("html/body-head.html");
-                        $date = file_get_contents("html/date.html");
-                        $body = str_replace("{DATE}", $date, $body);
+    
+                        $monthsHtml = _generateMonthsHtml($db, $_SESSION['user_id']);
+                        $body = file_get_contents("html/body-employee.html");
+                        $body = str_replace("{DATE}", $monthsHtml, $body);
                         echo $body;
+    
                         exit();
                     case 2:
                         $header = _loadHtmlPattern();
                         $username = _getUsrNameFromDB($db, $_SESSION['user_id']);
-                        $user_info = "<div>Добро пожаловать, ".$username."!</div>";
-                        $header = str_replace("{LOGIN-INFO}", $user_info, $header );
+                        $user_info = "<div>Добро пожаловать, " . $username . "!</div>";
+                        $header = str_replace("{LOGIN-INFO}", $user_info, $header);
                         echo $header;
+    
+                        $monthsHtml = _generateMonthsHtml($db, $_SESSION['user_id']);
                         $body = file_get_contents("html/body-admin.html");
-                        $date = file_get_contents("html/date.html");
-                        $body = str_replace("{DATE}", $date, $body);
+                        $body = str_replace("{DATE}", $monthsHtml, $body);
                         echo $body;
+    
                         exit();
                     case 3:
                         $header = _loadHtmlPattern();
                         $username = _getUsrNameFromDB($db, $_SESSION['user_id']);
-                        $user_info = "<div>Добро пожаловать, ".$username."!</div>";
-                        $header = str_replace("{LOGIN-INFO}", $user_info, $header );
+                        $user_info = "<div>Добро пожаловать, " . $username . "!</div>";
+                        $header = str_replace("{LOGIN-INFO}", $user_info, $header);
                         echo $header;
-                        $body = file_get_contents("html/body-employee.html");
-                        $date = file_get_contents("html/date.html");
-                        $body = str_replace("{DATE}", $date, $body);
+    
+                        $monthsHtml = _generateMonthsHtml($db, $_SESSION['user_id']);
+                        $body = file_get_contents("html/body-head.html");
+                        $body = str_replace("{DATE}", $monthsHtml, $body);
                         echo $body;
+    
                         exit();
                     default:
                         echo "Unknown role";
                         exit();
                 }
             } else {
-                echo "Неверное имя пользователя или пароль.";
+                $error_message = "Неверное имя пользователя или пароль.";
+                echo "<script type='text/javascript'>alert('$error_message');</script>";
+                $author = file_get_contents("html/authorization.html");
+                echo $author;
             }
         } else {
             // Вывод страницы авторизации
