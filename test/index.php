@@ -1,4 +1,5 @@
 ﻿<?php
+
 session_set_cookie_params(
     array('lifetime' => 30 * 24 * 60 * 60) // 30 дней в секундах
 );
@@ -15,8 +16,8 @@ try {
     $db = new SQLite3($dbPath);
 
     // Обработка отправки отчетов
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        header('Content-Type: application/json');
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+        //header('Content-Type: application/json');
 
         $data = json_decode(file_get_contents('php://input'), true);
 
@@ -35,10 +36,9 @@ try {
             } else {
                 echo json_encode(array('status' => 'error', 'message' => 'Failed to execute statement'));
             }
-        } else {
-            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized or invalid data'));
+            exit();
         }
-        exit();
+        
     }
 
     // Создание таблицы ROLES, если она не существует
