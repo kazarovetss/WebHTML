@@ -13,14 +13,7 @@
     <div class="company-info">
         {company-info}
     </div>
-    <div class="login-info">
-        <?php
-        if (isset($_SESSION['username'])) {
-            echo "Авторизирован как " . htmlspecialchars($_SESSION['username']);
-        } else {
-            echo "Не авторизирован";
-        }
-        ?>
+    <div class="login-info">{LOGIN-INFO} 
     </div>
 </header>
 </body>

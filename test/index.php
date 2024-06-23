@@ -1,5 +1,5 @@
 ﻿<?php
-
+error_reporting(E_ERROR | E_PARSE);
 session_set_cookie_params(
     array('lifetime' => 30 * 24 * 60 * 60) // 30 дней в секундах
 );
@@ -11,6 +11,18 @@ date_default_timezone_set('Europe/Minsk');
 // Путь к файлу бД
 $dbPath = 'db/html.db';
 $dir = __DIR__ . '/html';
+
+function _loadHtmlPattern() {
+    return file_get_contents("html/header.html");
+}
+
+function _getUsrNameFromDB($db, $userId) {
+    $stmt = $db->prepare('SELECT username FROM users WHERE user_id = :user_id');
+    $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
+    $result = $stmt->execute();
+    $user = $result->fetchArray(SQLITE3_ASSOC);
+    return $user ? $user['username'] : 'Unknown';
+}
 
 try {
     $db = new SQLite3($dbPath);
@@ -137,21 +149,33 @@ try {
             // Вывод нужной страницы в зависимости от роли
             switch ($user['role_id']) {
                 case 1:
-                    include("html/header.php");
+                    $header = _loadHtmlPattern();
+                    $username = _getUsrNameFromDB($db, $_SESSION['user_id']);
+                    $user_info = "<div>Добро пожаловать, ".$username."!</div>";
+                    $header = str_replace("{LOGIN-INFO}", $user_info, $header );
+                    echo $header;
                     $body = file_get_contents("html/body-head.html");
                     $date = file_get_contents("html/date.html");
                     $body = str_replace("{DATE}", $date, $body);
                     echo $body;
                     exit();
                 case 2:
-                    include("html/header.php");
+                    $header = _loadHtmlPattern();
+                    $username = _getUsrNameFromDB($db, $_SESSION['user_id']);
+                    $user_info = "<div>Добро пожаловать, ".$username."!</div>";
+                    $header = str_replace("{LOGIN-INFO}", $user_info, $header );
+                    echo $header;
                     $body = file_get_contents("html/body-admin.html");
                     $date = file_get_contents("html/date.html");
                     $body = str_replace("{DATE}", $date, $body);
                     echo $body;
                     exit();
                 case 3:
-                    include("html/header.php");
+                    $header = _loadHtmlPattern();
+                    $username = _getUsrNameFromDB($db, $_SESSION['user_id']);
+                    $user_info = "<div>Добро пожаловать, ".$username."!</div>";
+                    $header = str_replace("{LOGIN-INFO}", $user_info, $header );
+                    echo $header;
                     $body = file_get_contents("html/body-employee.html");
                     $date = file_get_contents("html/date.html");
                     $body = str_replace("{DATE}", $date, $body);
@@ -195,21 +219,33 @@ try {
                 // Вывод нужной страницы в зависимости от роли
                 switch ($user['role_id']) {
                     case 1:
-                        include("html/header.php");
+                        $header = _loadHtmlPattern();
+                        $username = _getUsrNameFromDB($db, $_SESSION['user_id']);
+                        $user_info = "<div>Добро пожаловать, ".$username."!</div>";
+                        $header = str_replace("{LOGIN-INFO}", $user_info, $header );
+                        echo $header;
                         $body = file_get_contents("html/body-head.html");
                         $date = file_get_contents("html/date.html");
                         $body = str_replace("{DATE}", $date, $body);
                         echo $body;
                         exit();
                     case 2:
-                        include("html/header.php");
+                        $header = _loadHtmlPattern();
+                        $username = _getUsrNameFromDB($db, $_SESSION['user_id']);
+                        $user_info = "<div>Добро пожаловать, ".$username."!</div>";
+                        $header = str_replace("{LOGIN-INFO}", $user_info, $header );
+                        echo $header;
                         $body = file_get_contents("html/body-admin.html");
                         $date = file_get_contents("html/date.html");
                         $body = str_replace("{DATE}", $date, $body);
                         echo $body;
                         exit();
                     case 3:
-                        include("html/header.php");
+                        $header = _loadHtmlPattern();
+                        $username = _getUsrNameFromDB($db, $_SESSION['user_id']);
+                        $user_info = "<div>Добро пожаловать, ".$username."!</div>";
+                        $header = str_replace("{LOGIN-INFO}", $user_info, $header );
+                        echo $header;
                         $body = file_get_contents("html/body-employee.html");
                         $date = file_get_contents("html/date.html");
                         $body = str_replace("{DATE}", $date, $body);
