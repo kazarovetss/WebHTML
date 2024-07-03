@@ -134,7 +134,7 @@ document.getElementById('AddUser').addEventListener('click', function() {
 
     let form = document.createElement('form');
 
-    ['username', 'pass', 'surname', 'name', 'lastname', 'unit', 'role_id'].forEach(field => {
+    ['username', 'pass', 'surname', 'name', 'lastname', 'unit'].forEach(field => {
         let label = document.createElement('label');
         label.textContent = field.charAt(0).toUpperCase() + field.slice(1);
         let input = document.createElement('input');
@@ -145,6 +145,29 @@ document.getElementById('AddUser').addEventListener('click', function() {
         form.appendChild(label);
         form.appendChild(document.createElement('br'));
     });
+
+    let roleLabel = document.createElement('label');
+    roleLabel.textContent = 'Role';
+    let roleSelect = document.createElement('select');
+    roleSelect.id = 'role_id';
+    roleSelect.name = 'role_id';
+
+    let roles = {
+        '1': 'Head',
+        '2': 'Admin',
+        '3': 'Employee'
+    };
+
+    for (let value in roles) {
+        let option = document.createElement('option');
+        option.value = value;
+        option.textContent = roles[value];
+        roleSelect.appendChild(option);
+    }
+
+    roleLabel.appendChild(roleSelect);
+    form.appendChild(roleLabel);
+    form.appendChild(document.createElement('br'));
 
     let submitButton = document.createElement('button');
     submitButton.textContent = 'Add User';
@@ -211,9 +234,8 @@ function saveUser(row, userId) {
 }
 
 function editUser(user) {
-    // Функция редактирования пользователя не определена 
-    // возможно даже не нужна
-
+    // Функция редактирования пользователя не определена
+    // возможно и не нужна
 }
 </script>
 </body>
