@@ -14,6 +14,9 @@
         <div class="Show">
             <button id="Show" class="admin-button" type="button">Просмотр</button>
         </div>
+        <div class="AddUser">
+            <button id="AddUser" class="admin-button" type="button">Добавить пользователя</button>
+        </div>
     </div>
     <div id="user-info"></div>
 </main>
@@ -37,8 +40,7 @@ document.getElementById('Show').addEventListener('click', function() {
         let table = document.createElement('table');
         let headerRow = document.createElement('tr');
 
-        // Assuming your table has columns 'user_id', 'username', 'pass', 'role_id'
-        ['User ID', 'Username', 'Password', 'Role ID', 'Actions'].forEach(headerText => {
+        ['User ID', 'Username', 'Password', 'Surname', 'Name', 'Lastname', 'Unit', 'Role ID', 'Actions'].forEach(headerText => {
             let header = document.createElement('th');
             header.textContent = headerText;
             headerRow.appendChild(header);
@@ -49,7 +51,7 @@ document.getElementById('Show').addEventListener('click', function() {
         data.forEach(user => {
             let row = document.createElement('tr');
 
-            ['user_id', 'username', 'pass', 'role_id'].forEach(key => {
+            ['user_id', 'username', 'pass', 'surname', 'name', 'lastname', 'unit', 'role_id'].forEach(key => {
                 let cell = document.createElement('td');
                 cell.textContent = user[key];
                 row.appendChild(cell);
@@ -89,8 +91,7 @@ document.getElementById('Settings').addEventListener('click', function() {
         let table = document.createElement('table');
         let headerRow = document.createElement('tr');
 
-        // Assuming your table has columns 'user_id', 'username', 'pass', 'role_id'
-        ['User ID', 'Username', 'Password', 'Role ID', 'Actions'].forEach(headerText => {
+        ['User ID', 'Username', 'Password', 'Surname', 'Name', 'Lastname', 'Unit', 'Role ID', 'Actions'].forEach(headerText => {
             let header = document.createElement('th');
             header.textContent = headerText;
             headerRow.appendChild(header);
@@ -101,9 +102,10 @@ document.getElementById('Settings').addEventListener('click', function() {
         data.forEach(user => {
             let row = document.createElement('tr');
 
-            ['user_id', 'username', 'pass', 'role_id'].forEach(key => {
+            ['user_id', 'username', 'pass', 'surname', 'name', 'lastname', 'unit', 'role_id'].forEach(key => {
                 let cell = document.createElement('td');
                 let input = document.createElement('input');
+                input.type = 'text'; // Задаем тип input
                 input.value = user[key];
                 input.dataset.key = key;
                 cell.appendChild(input);
@@ -125,6 +127,60 @@ document.getElementById('Settings').addEventListener('click', function() {
         userInfoDiv.appendChild(table);
     });
 });
+
+document.getElementById('AddUser').addEventListener('click', function() {
+    let userInfoDiv = document.getElementById('user-info');
+    userInfoDiv.innerHTML = ''; // Очистить предыдущие данные
+
+    let form = document.createElement('form');
+
+    ['username', 'pass', 'surname', 'name', 'lastname', 'unit', 'role_id'].forEach(field => {
+        let label = document.createElement('label');
+        label.textContent = field.charAt(0).toUpperCase() + field.slice(1);
+        let input = document.createElement('input');
+        input.type = 'text'; // Задаем тип input
+        input.id = field;
+        input.name = field;
+        label.appendChild(input);
+        form.appendChild(label);
+        form.appendChild(document.createElement('br'));
+    });
+
+    let submitButton = document.createElement('button');
+    submitButton.textContent = 'Add User';
+    submitButton.type = 'button';
+    submitButton.addEventListener('click', function() {
+        addUser();
+    });
+    form.appendChild(submitButton);
+
+    userInfoDiv.appendChild(form);
+});
+
+function addUser() {
+    let formData = new URLSearchParams();
+    formData.append('action', 'add_user');
+    ['username', 'pass', 'surname', 'name', 'lastname', 'unit', 'role_id'].forEach(field => {
+        formData.append(field, document.getElementById(field).value);
+    });
+
+    fetch('index.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('User added successfully');
+            document.getElementById('user-info').innerHTML = ''; // Очистить форму после успешного добавления
+        } else {
+            alert('Failed to add user');
+        }
+    });
+}
 
 function saveUser(row, userId) {
     let inputs = row.querySelectorAll('input');
@@ -155,7 +211,9 @@ function saveUser(row, userId) {
 }
 
 function editUser(user) {
-    // This function can be used to implement additional edit functionality if required
+    // Функция редактирования пользователя не определена 
+    // возможно даже не нужна
+
 }
 </script>
 </body>

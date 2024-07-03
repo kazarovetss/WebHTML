@@ -7,8 +7,8 @@ set_time_limit(0);
 date_default_timezone_set('Europe/Minsk');
 
 // Путь к файлу бД
-$dbPath = 'db/html.db';
-$dir = __DIR__ . '/html';
+$dbPath = 'db/html_test.db';
+$dir = __DIR__ . '/html_test';
 
 function _loadHtmlTemplate($fileName) {
     return file_get_contents($fileName);
@@ -131,7 +131,7 @@ try {
         $action = isset($_POST['action']) ? $_POST['action'] : '';
     
         if ($action === 'get_users') {
-            $stmt = $db->prepare('SELECT user_id, username, pass, role_id FROM users');
+            $stmt = $db->prepare('SELECT user_id, username, pass, surname, name, lastname, unit, role_id FROM users');
             $result = $stmt->execute();
             $users = array();
             while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
@@ -146,12 +146,20 @@ try {
             $userId = isset($_POST['user_id']) ? $_POST['user_id'] : '';
             $username = isset($_POST['username']) ? $_POST['username'] : '';
             $pass = isset($_POST['pass']) ? $_POST['pass'] : '';
+            $surname = isset($_POST['surname']) ? $_POST['surname'] : '';
+            $name = isset($_POST['name']) ? $_POST['name'] : '';
+            $lastname = isset($_POST['lastname']) ? $_POST['lastname'] : '';
+            $unit = isset($_POST['unit']) ? $_POST['unit'] : '';
             $roleId = isset($_POST['role_id']) ? $_POST['role_id'] : '';
     
-            $stmt = $db->prepare('UPDATE users SET username = :username, pass = :pass, role_id = :role_id WHERE user_id = :user_id');
+            $stmt = $db->prepare('UPDATE users SET username = :username, pass = :pass, surname = :surname, name = :name, lastname = :lastname, unit = :unit, role_id = :role_id WHERE user_id = :user_id');
             $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
             $stmt->bindValue(':username', $username, SQLITE3_TEXT);
             $stmt->bindValue(':pass', $pass, SQLITE3_TEXT);
+            $stmt->bindValue(':surname', $surname, SQLITE3_TEXT);
+            $stmt->bindValue(':name', $name, SQLITE3_TEXT);
+            $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
+            $stmt->bindValue(':unit', $unit, SQLITE3_TEXT); 
             $stmt->bindValue(':role_id', $roleId, SQLITE3_INTEGER);
     
             if ($stmt->execute()) {
@@ -161,47 +169,79 @@ try {
             }
             exit();
         }
+
+        if ($action === 'add_user') {
+            $username = isset($_POST['username']) ? $_POST['username'] : '';
+            $pass = isset($_POST['pass']) ? $_POST['pass'] : '';
+            $surname = isset($_POST['surname']) ? $_POST['surname'] : '';
+            $name = isset($_POST['name']) ? $_POST['name'] : '';
+            $lastname = isset($_POST['lastname']) ? $_POST['lastname'] : '';
+            $unit = isset($_POST['unit']) ? $_POST['unit'] : '';
+            $roleId = isset($_POST['role_id']) ? $_POST['role_id'] : '';
+    
+            $stmt = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id)');
+            $stmt->bindValue(':username', $username, SQLITE3_TEXT);
+            $stmt->bindValue(':pass', $pass, SQLITE3_TEXT);
+            $stmt->bindValue(':surname', $surname, SQLITE3_TEXT);
+            $stmt->bindValue(':name', $name, SQLITE3_TEXT);
+            $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
+            $stmt->bindValue(':unit', $unit, SQLITE3_TEXT);
+            $stmt->bindValue(':role_id', $roleId, SQLITE3_INTEGER);
+    
+            if ($stmt->execute()) {
+                echo json_encode(array('status' => 'success'));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to execute statement'));
+            }
+            exit();
+        }
+    
     }
+
     // Создание таблиц, если они не существуют
     $db->exec("CREATE TABLE IF NOT EXISTS roles (role_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE)");
-    $db->exec("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, pass TEXT, role_id INTEGER, FOREIGN KEY (role_id) REFERENCES roles(role_id))");
+    $db->exec("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, pass TEXT, surname TEXT, name TEXT, lastname TEXT, unit INTEGER, role_id INTEGER, FOREIGN KEY (role_id) REFERENCES roles(role_id))");
     $db->exec("CREATE TABLE IF NOT EXISTS reports (report_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, report_text TEXT, send_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(user_id))");
-
+    
     $names = array('head', 'admin', 'user');
     $checkRole = $db->prepare('SELECT COUNT(*) AS count FROM roles WHERE name = :name');
     $stmtRole = $db->prepare('INSERT INTO roles (name) VALUES (:name)');
-
+    
     foreach ($names as $name) {
         $checkRole->bindValue(':name', $name, SQLITE3_TEXT);
         $result = $checkRole->execute()->fetchArray(SQLITE3_ASSOC);
-
+    
         if ($result['count'] == 0) {
             $stmtRole->bindValue(':name', $name, SQLITE3_TEXT);
             $stmtRole->execute();
         }
     }
-
+    
     $users = array(
-        array('username' => 'head', 'pass' => 'passhead', 'role_id' => 1),
-        array('username' => 'admin', 'pass' => 'passadmin', 'role_id' => 2),
-        array('username' => 'user', 'pass' => 'passuser', 'role_id' => 3)
+        array('username' => 'head', 'pass' => 'passhead', 'surname' => 'Иванов', 'name' => 'Иван', 'lastname' => 'Иванович', 'unit' => 143, 'role_id' => 1),
+        array('username' => 'admin', 'pass' => 'passadmin', 'surname' => 'Петров', 'name' => 'Петр', 'lastname' => 'Петрович', 'unit' => 142, 'role_id' => 2),
+        array('username' => 'user', 'pass' => 'passuser', 'surname' => 'Сергеев', 'name' => 'Сергей', 'lastname' => 'Сергеевич', 'unit' => 141, 'role_id' => 3)
     );
-
+    
     $checkUser = $db->prepare('SELECT COUNT(*) AS count FROM users WHERE username = :username');
-    $stmtUser = $db->prepare('INSERT INTO users (username, pass, role_id) VALUES (:username, :pass, :role_id)');
-
+    $stmtUser = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id)');
+    
     foreach ($users as $user) {
         $checkUser->bindValue(':username', $user['username'], SQLITE3_TEXT);
         $result = $checkUser->execute()->fetchArray(SQLITE3_ASSOC);
-
+    
         if ($result['count'] == 0) {
             $stmtUser->bindValue(':username', $user['username'], SQLITE3_TEXT);
             $stmtUser->bindValue(':pass', $user['pass'], SQLITE3_TEXT);
+            $stmtUser->bindValue(':surname', $user['surname'], SQLITE3_TEXT);
+            $stmtUser->bindValue(':name', $user['name'], SQLITE3_TEXT);
+            $stmtUser->bindValue(':lastname', $user['lastname'], SQLITE3_TEXT);
+            $stmtUser->bindValue(':unit', $user['unit'], SQLITE3_INTEGER);
             $stmtUser->bindValue(':role_id', $user['role_id'], SQLITE3_INTEGER);
             $stmtUser->execute();
         }
     }
-
+    
     // Проверка куки для автоматической авторизации
     if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) {
         if (isset($_POST['logout'])) {
