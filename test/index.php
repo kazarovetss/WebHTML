@@ -26,7 +26,7 @@ function _getAvailableMonths($db, $userId) {
     $stmt = $db->prepare('SELECT DISTINCT strftime("%Y-%m", send_date) as month FROM reports WHERE user_id = :user_id ORDER BY month');
     $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
     $result = $stmt->execute();
-    $months = [];
+    $months = array();
     while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
         $months[] = $row['month'];
     }
@@ -41,11 +41,11 @@ function _generateMonthsHtml($db, $userId) {
         '09' => 'Сентябрь', '10' => 'Октябрь', '11' => 'Ноябрь', '12' => 'Декабрь'
     );
 
-    $years = [];
+    $years = array();
     foreach ($availableMonths as $month) {
         list($year, $monthNum) = explode('-', $month);
         if (!isset($years[$year])) {
-            $years[$year] = [];
+            $years[$year] = array();
         }
         $years[$year][] = $monthNum;
     }
@@ -93,7 +93,7 @@ function displayUserPage($db, $role, $userId) {
     if ($role == 1) {
         $bodyFile = "html/body-head.html";
     } elseif ($role == 2) {
-        $bodyFile = "html/body-admin.html";
+        $bodyFile = "html/admin.html";
     }
     $body = _loadHtmlTemplate($bodyFile);
     $body = str_replace("{DATE}", $monthsHtml, $body);
@@ -127,6 +127,41 @@ try {
         }
     }
 
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $action = isset($_POST['action']) ? $_POST['action'] : '';
+    
+        if ($action === 'get_users') {
+            $stmt = $db->prepare('SELECT user_id, username, pass, role_id FROM users');
+            $result = $stmt->execute();
+            $users = array();
+            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                $users[] = $row;
+            }
+            header('Content-Type: application/json');
+            echo json_encode($users);
+            exit();
+        }
+    
+        if ($action === 'update_user') {
+            $userId = isset($_POST['user_id']) ? $_POST['user_id'] : '';
+            $username = isset($_POST['username']) ? $_POST['username'] : '';
+            $pass = isset($_POST['pass']) ? $_POST['pass'] : '';
+            $roleId = isset($_POST['role_id']) ? $_POST['role_id'] : '';
+    
+            $stmt = $db->prepare('UPDATE users SET username = :username, pass = :pass, role_id = :role_id WHERE user_id = :user_id');
+            $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
+            $stmt->bindValue(':username', $username, SQLITE3_TEXT);
+            $stmt->bindValue(':pass', $pass, SQLITE3_TEXT);
+            $stmt->bindValue(':role_id', $roleId, SQLITE3_INTEGER);
+    
+            if ($stmt->execute()) {
+                echo json_encode(array('status' => 'success'));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to execute statement'));
+            }
+            exit();
+        }
+    }
     // Создание таблиц, если они не существуют
     $db->exec("CREATE TABLE IF NOT EXISTS roles (role_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE)");
     $db->exec("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, pass TEXT, role_id INTEGER, FOREIGN KEY (role_id) REFERENCES roles(role_id))");

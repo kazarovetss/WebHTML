@@ -45,7 +45,8 @@ header {
 }
 
 .login-info {
-    text-align: right;
+    text-align: left;
+
 }
 
 a {
@@ -224,3 +225,52 @@ textarea#field {
     padding: 10px 0px;
 }
 
+.admin-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+}
+
+#Settings, #Show{
+    background-color: #4CAF50; /* Зеленый фон */
+    color: white; /* Белый цвет текста */
+    padding: 15px 32px; /* Отступы */
+    text-align: center; /* Выравнивание текста по центру */
+    text-decoration: none; /* Убираем подчеркивание текста */
+    display: inline-block; /* Блочный элемент */
+    font-size: 16px; /* Размер шрифта */
+    border: none; /* Убираем границу */
+    border-radius: 8px; /* Скругленные углы */
+    cursor: pointer; /* Курсор указателя при наведении */
+    transition: background-color 0.3s; /* Плавный переход цвета фона */
+    margin: 0 10px;
+}
+
+#Settings,#Show:hover {
+    background-color: #45a049; /* Темно-зеленый цвет при наведении */
+}
+
+#user-info {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+table {
+    width: 80%;
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 18px;
+    text-align: left;
+}
+
+table th, table td {
+    padding: 12px;
+    border: 1px solid #ddd;
+}
+
+table th {
+    background-color: #4CAF50;
+    color: white;
+}

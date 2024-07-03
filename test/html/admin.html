@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="main_window.css">
+</head>
+<body>
+<main>
+    <div class="admin-container">
+        <div class="Settings">
+            <button id="Settings" class="admin-button" type="button">Настройки</button>
+        </div>
+        <div class="Show">
+            <button id="Show" class="admin-button" type="button">Просмотр</button>
+        </div>
+    </div>
+    <div id="user-info"></div>
+</main>
+
+<script>
+document.getElementById('Show').addEventListener('click', function() {
+    fetch('index.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            'action': 'get_users'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        let userInfoDiv = document.getElementById('user-info');
+        userInfoDiv.innerHTML = ''; // Очистить предыдущие данные
+
+        let table = document.createElement('table');
+        let headerRow = document.createElement('tr');
+
+        // Assuming your table has columns 'user_id', 'username', 'pass', 'role_id'
+        ['User ID', 'Username', 'Password', 'Role ID', 'Actions'].forEach(headerText => {
+            let header = document.createElement('th');
+            header.textContent = headerText;
+            headerRow.appendChild(header);
+        });
+
+        table.appendChild(headerRow);
+
+        data.forEach(user => {
+            let row = document.createElement('tr');
+
+            ['user_id', 'username', 'pass', 'role_id'].forEach(key => {
+                let cell = document.createElement('td');
+                cell.textContent = user[key];
+                row.appendChild(cell);
+            });
+
+            let editCell = document.createElement('td');
+            let editButton = document.createElement('button');
+            editButton.textContent = 'Edit';
+            editButton.addEventListener('click', function() {
+                editUser(user);
+            });
+            editCell.appendChild(editButton);
+            row.appendChild(editCell);
+
+            table.appendChild(row);
+        });
+
+        userInfoDiv.appendChild(table);
+    });
+});
+
+document.getElementById('Settings').addEventListener('click', function() {
+    fetch('index.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            'action': 'get_users'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        let userInfoDiv = document.getElementById('user-info');
+        userInfoDiv.innerHTML = ''; // Очистить предыдущие данные
+
+        let table = document.createElement('table');
+        let headerRow = document.createElement('tr');
+
+        // Assuming your table has columns 'user_id', 'username', 'pass', 'role_id'
+        ['User ID', 'Username', 'Password', 'Role ID', 'Actions'].forEach(headerText => {
+            let header = document.createElement('th');
+            header.textContent = headerText;
+            headerRow.appendChild(header);
+        });
+
+        table.appendChild(headerRow);
+
+        data.forEach(user => {
+            let row = document.createElement('tr');
+
+            ['user_id', 'username', 'pass', 'role_id'].forEach(key => {
+                let cell = document.createElement('td');
+                let input = document.createElement('input');
+                input.value = user[key];
+                input.dataset.key = key;
+                cell.appendChild(input);
+                row.appendChild(cell);
+            });
+
+            let saveCell = document.createElement('td');
+            let saveButton = document.createElement('button');
+            saveButton.textContent = 'Save';
+            saveButton.addEventListener('click', function() {
+                saveUser(row, user.user_id);
+            });
+            saveCell.appendChild(saveButton);
+            row.appendChild(saveCell);
+
+            table.appendChild(row);
+        });
+
+        userInfoDiv.appendChild(table);
+    });
+});
+
+function saveUser(row, userId) {
+    let inputs = row.querySelectorAll('input');
+    let userData = {
+        user_id: userId,
+        action: 'update_user'
+    };
+
+    inputs.forEach(input => {
+        userData[input.dataset.key] = input.value;
+    });
+
+    fetch('index.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams(userData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('User updated successfully');
+        } else {
+            alert('Failed to update user');
+        }
+    });
+}
+
+function editUser(user) {
+    // This function can be used to implement additional edit functionality if required
+}
+</script>
+</body>
+</html>
