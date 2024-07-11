@@ -232,7 +232,7 @@ textarea#field {
     height: 300px;
 }
 
-#Settings, #Show, #AddUser {
+#Settings, #Show, #AddUser, #GeneralSettings {
     background-color: #4CAF50; 
     color: white; 
     padding: 15px 32px;
@@ -247,12 +247,11 @@ textarea#field {
     margin: 0 10px;
 }
 
-#Settings:hover, #Show:hover, #AddUser:hover {
+#Settings:hover, #Show:hover, #AddUser:hover, #GeneralSettings:hover {
     background-color: #45a049; 
 }
 
 #user-info {
-    margin-top: 20px;
     display: flex;
     justify-content: center;
     width: 100%; 
@@ -260,11 +259,12 @@ textarea#field {
 }
 
 table {
-    width: 80%; 
+    min-width: 1000px; 
     border-collapse: collapse;
     margin: 25px 0;
     font-size: 18px;
     text-align: left;
+    table-layout: fixed; /* Это помогает установить фиксированное размещение ячеек */
 }
 
 table th, table td {
@@ -305,18 +305,6 @@ select {
     border: 1px solid #ccc;
     border-radius: 8px;
     cursor: pointer;
-}
-
-select {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-color: white;
-    color: #333;
-    padding: 12px 20px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    cursor: pointer;
     width: 100%;
     box-sizing: border-box;
     font-size: 16px;
@@ -334,5 +322,70 @@ button {
 }
 
 button:hover {
+    background-color: #45a049;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.pagination button {
+    padding: 10px 20px;
+    margin: 0 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.pagination button:hover {
+    background-color: #45a049;
+}
+
+.pagination button.active {
+    background-color: #45a049;
+}
+
+.settings-form {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+}
+
+.settings-form label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.settings-form input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.settings-form button {
+    display: inline-block;
+    padding: 10px 20px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.settings-form button:hover {
     background-color: #45a049;
 }

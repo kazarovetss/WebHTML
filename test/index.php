@@ -169,7 +169,7 @@ try {
             }
             exit();
         }
-
+    
         if ($action === 'add_user') {
             $username = isset($_POST['username']) ? $_POST['username'] : '';
             $pass = isset($_POST['pass']) ? $_POST['pass'] : '';
@@ -195,7 +195,20 @@ try {
             }
             exit();
         }
+
+        if ($action === 'delete_user') {
+            $userId = isset($_POST['user_id']) ? $_POST['user_id'] : '';
     
+            $stmt = $db->prepare('DELETE FROM users WHERE user_id = :user_id');
+            $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
+    
+            if ($stmt->execute()) {
+                echo json_encode(array('status' => 'success'));
+            } else {
+                echo json_encode(array('status' => 'error', 'message' => 'Failed to execute statement'));
+            }
+            exit();
+        }
     }
 
     // Создание таблиц, если они не существуют
