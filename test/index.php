@@ -143,7 +143,7 @@ try {
         }
     
         if ($action === 'update_user') {
-            $userId = isset($_POST['user_id']) ? $_POST['user_id'] : '';
+            //$userId = isset($_POST['user_id']) ? $_POST['user_id'] : '';
             $username = isset($_POST['username']) ? $_POST['username'] : '';
             $pass = isset($_POST['pass']) ? $_POST['pass'] : '';
             $surname = isset($_POST['surname']) ? $_POST['surname'] : '';
@@ -153,7 +153,7 @@ try {
             $roleId = isset($_POST['role_id']) ? $_POST['role_id'] : '';
     
             $stmt = $db->prepare('UPDATE users SET username = :username, pass = :pass, surname = :surname, name = :name, lastname = :lastname, unit = :unit, role_id = :role_id WHERE user_id = :user_id');
-            $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
+            //$stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
             $stmt->bindValue(':username', $username, SQLITE3_TEXT);
             $stmt->bindValue(':pass', $pass, SQLITE3_TEXT);
             $stmt->bindValue(':surname', $surname, SQLITE3_TEXT);

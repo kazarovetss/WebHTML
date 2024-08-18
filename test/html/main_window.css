@@ -59,8 +59,8 @@ a:hover {
 }
 
 main {
-    width: 80%;
-    max-width: 1200px;
+    width: 100%;
+    max-width: 1600px;
     margin: 0 auto;
     background-color: #f0f0f0;
     padding: 20px;
@@ -224,14 +224,24 @@ textarea#field {
 .isHeadVersion{
     padding: 10px 0px;
 }
-
+/* админ страница */
 .admin-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 300px;
 }
 
+.Settings {
+    width: 80%;
+    padding: 5px;
+    margin: 10px;
+}
+
+.AddUser {
+    width:20%;
+    padding: 5px;
+    margin: 10px;
+}
 #Settings, #Show, #AddUser, #GeneralSettings {
     background-color: #4CAF50; 
     color: white; 
@@ -270,7 +280,7 @@ table {
 table th, table td {
     padding: 12px;
     border: 1px solid #ddd;
-    width: auto; 
+    width: 10%; 
 }
 
 table th {
@@ -388,4 +398,8 @@ button:hover {
 
 .settings-form button:hover {
     background-color: #45a049;
+}
+
+#user-info.user-info.hidden {
+    display: none;
 }
