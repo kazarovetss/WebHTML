@@ -206,8 +206,7 @@ function displaySettings(data, page) {
 
 // Функция для сброса пароля на "12345"
 function resetPassword(userId) {
-    const newPassword = '12345';
-    const hashedPassword = btoa(newPassword); // Пример хэширования, измените по необходимости
+    const newPassword = 'pass'; // Новый пароль
 
     fetch('index.php', {
         method: 'POST',
@@ -217,13 +216,13 @@ function resetPassword(userId) {
         body: new URLSearchParams({
             action: 'reset_password',
             user_id: userId,
-            new_password: hashedPassword
+            new_password: newPassword // Передаем простой текстовый пароль
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            alert('Пароль успешно сброшен на 12345');
+            alert('Пароль успешно сброшен на pass');
         } else {
             alert('Ошибка сброса пароля');
         }
@@ -430,6 +429,15 @@ function setupPagination(totalRows, currentPage, fetchFunction, isSettings = fal
         });
         paginationDiv.appendChild(pageButton);
     }
+
+    // Добавляем кнопку обновления страницы в конце
+    let refreshButton = document.createElement('button');
+    refreshButton.innerHTML = '&#8634'; // Символ для обновления
+    refreshButton.className = 'refresh-button';
+    refreshButton.addEventListener('click', function() {
+        fetchFunction(currentPage, isSettings); // Обновляем текущую страницу
+    });
+    paginationDiv.appendChild(refreshButton);
 }
 </script>
 </body>
