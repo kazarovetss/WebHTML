@@ -118,7 +118,7 @@ function displaySettings(data, page) {
     let table = document.createElement('table');
     let headerRow = document.createElement('tr');
 
-    ['Username', 'Password', 'Surname', 'Name', 'Lastname', 'Unit', 'Role ID', 'Actions'].forEach(headerText => {
+    ['Username', 'Surname', 'Name', 'Lastname', 'Unit', 'Role ID','Password', 'Actions'].forEach(headerText => {
         let header = document.createElement('th');
         header.textContent = headerText;
         headerRow.appendChild(header);
@@ -133,7 +133,7 @@ function displaySettings(data, page) {
     paginatedData.forEach(user => {
         let row = document.createElement('tr');
 
-        ['username', 'pass', 'surname', 'name', 'lastname', 'unit', 'role_id'].forEach(key => {
+        ['username', 'surname', 'name', 'lastname', 'unit', 'role_id'].forEach(key => {
             let cell = document.createElement('td');
 
             if (key === 'role_id') {
@@ -168,6 +168,16 @@ function displaySettings(data, page) {
             row.appendChild(cell);
         });
 
+        // Добавляем кнопку сброса пароля
+        let passwordResetCell = document.createElement('td');
+        let resetButton = document.createElement('button');
+        resetButton.textContent = 'Reset Password';
+        resetButton.addEventListener('click', function() {
+            resetPassword(user.user_id);
+        });
+        passwordResetCell.appendChild(resetButton);
+        row.appendChild(passwordResetCell);
+
         let actionsCell = document.createElement('td');
         
         // Кнопка "Save"
@@ -192,6 +202,32 @@ function displaySettings(data, page) {
 
     userInfoDiv.appendChild(table);
     setupPagination(data.length, page, fetchUsers, true);
+}
+
+// Функция для сброса пароля на "12345"
+function resetPassword(userId) {
+    const newPassword = '12345';
+    const hashedPassword = btoa(newPassword); // Пример хэширования, измените по необходимости
+
+    fetch('index.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            action: 'reset_password',
+            user_id: userId,
+            new_password: hashedPassword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Пароль успешно сброшен на 12345');
+        } else {
+            alert('Ошибка сброса пароля');
+        }
+    });
 }
 
 function deleteUser(userId, username) {
@@ -324,7 +360,9 @@ function saveGeneralSettings() {
 function addUser() {
     let formData = new URLSearchParams();
     formData.append('action', 'add_user');
-    ['username', 'pass', 'surname', 'name', 'lastname', 'unit', 'role_id'].forEach(field => {
+    const fields = ['username', 'pass', 'surname', 'name', 'lastname', 'unit', 'role_id'];
+
+    fields.forEach(field => {
         formData.append(field, document.getElementById(field).value);
     });
 
@@ -338,13 +376,17 @@ function addUser() {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            alert('User added successfully');
-            document.getElementById('add-user-container').innerHTML = ''; // Очистить форму после успешного добавления
+            alert('Пользователь успешно добавлен');
+            // Очистить только поля ввода
+            fields.forEach(field => {
+                document.getElementById(field).value = '';
+            });
         } else {
-            alert('Failed to add user');
+            alert('Ошибка добавления пользователя');
         }
     });
 }
+
 
 function saveUser(row, userId) {
     let inputs = row.querySelectorAll('input, select');
