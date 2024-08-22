@@ -214,7 +214,7 @@ try {
             $userId = isset($_POST['user_id']) ? $_POST['user_id'] : '';
             $newPassword = isset($_POST['new_password']) ? $_POST['new_password'] : '';
         
-            // Здесь используйте безопасное хэширование пароля
+            // Безопасное хэширование пароля
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
         
             $stmt = $db->prepare('UPDATE users SET pass = :pass WHERE user_id = :user_id');
