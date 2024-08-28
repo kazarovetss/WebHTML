@@ -204,7 +204,7 @@ function displaySettings(data, page) {
     setupPagination(data.length, page, fetchUsers, true);
 }
 
-// Функция для сброса пароля на "12345"
+// Функция для сброса пароля на "pass"
 function resetPassword(userId) {
     const newPassword = 'pass'; // Новый пароль
 
@@ -408,9 +408,9 @@ function saveUser(row, userId) {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            alert('User updated successfully');
+            alert('Успешное обновление пользователя');
         } else {
-            alert('Failed to update user');
+            alert('Ошибка обновления');
         }
     });
 }

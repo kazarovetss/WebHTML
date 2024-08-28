@@ -214,7 +214,7 @@ try {
             $userId = isset($_POST['user_id']) ? $_POST['user_id'] : '';
             $newPassword = isset($_POST['new_password']) ? $_POST['new_password'] : '';
         
-            // Здесь используйте безопасное хэширование пароля
+            // Безопасное хэширование пароля
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
         
             $stmt = $db->prepare('UPDATE users SET pass = :pass WHERE user_id = :user_id');
@@ -288,14 +288,15 @@ try {
         }
 
         $username = $_COOKIE['username'];
-        $password = $_COOKIE['password'];
+    $password = $_COOKIE['password'];
 
-        $stmtAuth = $db->prepare('SELECT * FROM users WHERE username = :username AND pass = :pass');
-        $stmtAuth->bindValue(':username', $username, SQLITE3_TEXT);
-        $stmtAuth->bindValue(':pass', $password, SQLITE3_TEXT);
-        $result = $stmtAuth->execute();
+    $stmtAuth = $db->prepare('SELECT * FROM users WHERE username = :username');
+    $stmtAuth->bindValue(':username', $username, SQLITE3_TEXT);
+    $result = $stmtAuth->execute();
 
-        if ($user = $result->fetchArray(SQLITE3_ASSOC)) {
+    if ($user = $result->fetchArray(SQLITE3_ASSOC)) {
+        // Проверяем пароль из cookies с хэшированным паролем в базе данных
+        if (password_verify($password, $user['pass'])) {
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role_id'] = $user['role_id'];
@@ -303,43 +304,62 @@ try {
             displayUserPage($db, $user['role_id'], $_SESSION['user_id']);
             exit();
         } else {
+            // Если пароль не совпадает, очистить кукиз и показать окно авторизации
             setcookie("username", "", time() - 3600, "/");
             setcookie("password", "", time() - 3600, "/");
             echo _loadHtmlTemplate("html/authorization.html");
             exit();
         }
     } else {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['username'];
-            $password = $_POST['password'];
-        
-            $stmtAuth = $db->prepare('SELECT * FROM users WHERE username = :username');
-            $stmtAuth->bindValue(':username', $username, SQLITE3_TEXT);
-            $result = $stmtAuth->execute();
-        
-            if ($user = $result->fetchArray(SQLITE3_ASSOC)) {
-                // Проверяем введенный пароль с хэшированным паролем из базы данных
-                if (password_verify($password, $user['pass'])) {
-                    $_SESSION['user_id'] = $user['user_id'];
-                    $_SESSION['username'] = $user['username'];
-                    $_SESSION['role_id'] = $user['role_id'];
-        
-                    setcookie("username", $username, time() + (30 * 24 * 60 * 60), "/");
-                    setcookie("password", $password, time() + (30 * 24 * 60 * 60), "/");
-        
-                    displayUserPage($db, $user['role_id'], $_SESSION['user_id']);
-                    exit();
-                } else {
-                    echo "<script type='text/javascript'>alert('Неверное имя пользователя или пароль.');</script>";
-                    echo _loadHtmlTemplate("html/authorization.html");
-                }
+        // Если пользователь не найден, очистить кукиз и показать окно авторизации
+        setcookie("username", "", time() - 3600, "/");
+        setcookie("password", "", time() - 3600, "/");
+        echo _loadHtmlTemplate("html/authorization.html");
+        exit();
+    }
+} else {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $username = $_POST['username'];
+        $password = $_POST['password'];
+
+        $stmtAuth = $db->prepare('SELECT * FROM users WHERE username = :username');
+        $stmtAuth->bindValue(':username', $username, SQLITE3_TEXT);
+        $result = $stmtAuth->execute();
+
+        if ($user = $result->fetchArray(SQLITE3_ASSOC)) {
+            // Проверяем введенный пароль с хэшированным паролем из базы данных
+            if (password_verify($password, $user['pass'])) {
+                $_SESSION['user_id'] = $user['user_id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['role_id'] = $user['role_id'];
+
+                // Сохраняем идентификатор пользователя, а не пароль в кукиз
+                setcookie("username", $username, time() + (30 * 24 * 60 * 60), "/");
+                setcookie("password", $password, time() + (30 * 24 * 60 * 60), "/");  
+
+                displayUserPage($db, $user['role_id'], $_SESSION['user_id']);
+                exit();
             } else {
                 echo "<script type='text/javascript'>alert('Неверное имя пользователя или пароль.');</script>";
                 echo _loadHtmlTemplate("html/authorization.html");
             }
+        } else {
+            echo "<script type='text/javascript'>alert('Неверное имя пользователя или пароль.');</script>";
+            echo _loadHtmlTemplate("html/authorization.html");
         }
-        
+    } 
+    elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        // Обработка GET-запросов
+        if (isset($_SESSION['user_id'])) {
+            $userId = $_SESSION['user_id'];
+            $role = $_SESSION['role_id'];
+            displayUserPage($db, $role, $userId);
+        }
     }
+    else {
+        echo _loadHtmlTemplate("html/authorization.html");
+    }
+}
 } catch (Exception $e) {
     echo "Не удалось открыть базу данных: " . $e->getMessage();
 }
