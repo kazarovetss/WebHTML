@@ -1,18 +1,24 @@
 ﻿<?php
-session_set_cookie_params(array('lifetime' => 30 * 24 * 60 * 60)); // 30 дней в секундах
+session_set_cookie_params(30 * 24 * 60 * 60); // 30 дней в секундах
 
 session_start();
 set_time_limit(0);
 date_default_timezone_set('Europe/Minsk');
 
-// Путь к файлу бД
+// Путь к файлу базы данных
 $dbPath = 'db/html_test.db';
 $dir = __DIR__ . '/html_test';
 
+// Функция загрузки шаблона с проверкой наличия файла
 function _loadHtmlTemplate($fileName) {
-    return file_get_contents($fileName);
+    if (file_exists($fileName)) {
+        return file_get_contents($fileName);
+    } else {
+        return "<!-- Шаблон $fileName не найден -->";
+    }
 }
 
+// Функции для работы с базой данных
 function _getUsrNameFromDB($db, $userId) {
     $stmt = $db->prepare('SELECT username FROM users WHERE user_id = :user_id');
     $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
@@ -57,7 +63,7 @@ function _generateMonthsHtml($db, $userId) {
             $year = "<span>NONE</span> ";
         }
         $yearHtml = _loadHtmlTemplate("html/date.html");
-        $yearHtml = str_replace("{YEAR}", $year, $yearHtml);
+        $yearHtml = str_replace("{YEAR}", "<span>NONE</span>", $yearHtml);
         $yearHtml = str_replace("{MOUNTH}", $monthLinks, $yearHtml);
         $html .= $yearHtml;
     } else {
@@ -82,18 +88,18 @@ function _generateMonthsHtml($db, $userId) {
 function displayUserPage($db, $role, $userId) {
     $header = _loadHtmlTemplate("html/header.html");
     $username = _getUsrNameFromDB($db, $userId);
-    $user_info = "<div>Добро пожаловать, " . $username . "!</div>";
+    $user_info = "<div>Добро пожаловать, " . htmlspecialchars($username) . "!</div>";
     $header = str_replace("{LOGIN-INFO}", $user_info, $header);
 
     $monthsHtml = _generateMonthsHtml($db, $userId);
-    
-    // Загрузка и замена основного шаблона для роли
-    $bodyFile = "html/body-employee.html"; // default
+
+    $bodyFile = "html/body-employee.html";
     if ($role == 1) {
         $bodyFile = "html/body-head.html";
     } elseif ($role == 2) {
         $bodyFile = "html/admin.html";
     }
+
     $body = _loadHtmlTemplate($bodyFile);
     $body = str_replace("{DATE}", $monthsHtml, $body);
 
@@ -103,7 +109,6 @@ function displayUserPage($db, $role, $userId) {
 try {
     $db = new SQLite3($dbPath);
 
-    // Обработка отправки отчетов
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
         $data = json_decode(file_get_contents('php://input'), true);
 
@@ -111,7 +116,6 @@ try {
             $userId = $_SESSION['user_id'];
             $reportText = $data['report_text'];
 
-            // Вставка отчета в базу данных
             $stmt = $db->prepare('INSERT INTO reports (user_id, report_text, send_date) VALUES (:user_id, :report_text, :send_date)');
             $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
             $stmt->bindValue(':report_text', $reportText, SQLITE3_TEXT);
@@ -128,7 +132,7 @@ try {
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = isset($_POST['action']) ? $_POST['action'] : '';
-    
+
         if ($action === 'get_users') {
             $stmt = $db->prepare('SELECT user_id, username, pass, surname, name, lastname, unit, role_id FROM users');
             $result = $stmt->execute();
@@ -140,7 +144,7 @@ try {
             echo json_encode($users);
             exit();
         }
-    
+
         if ($action === 'update_user') {
             //$userId = isset($_POST['user_id']) ? $_POST['user_id'] : '';
             $username = isset($_POST['username']) ? $_POST['username'] : '';
@@ -275,9 +279,9 @@ try {
             $stmtUser->execute();
         }
     }
-    
+
     // Проверка куки для автоматической авторизации
-    if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) {
+    if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) { 
         if (isset($_POST['logout'])) {
             session_unset();
             session_destroy();
@@ -287,79 +291,74 @@ try {
             exit();
         }
 
-        $username = $_COOKIE['username'];
-    $password = $_COOKIE['password'];
+        $username = $_COOKIE['username'] ?? null; 
+        $password = $_COOKIE['password'] ?? null;
 
-    $stmtAuth = $db->prepare('SELECT * FROM users WHERE username = :username');
-    $stmtAuth->bindValue(':username', $username, SQLITE3_TEXT);
-    $result = $stmtAuth->execute();
+        if ($username && $password) {
+            $stmtAuth = $db->prepare('SELECT * FROM users WHERE username = :username');
+            $stmtAuth->bindValue(':username', $username, SQLITE3_TEXT);
+            $result = $stmtAuth->execute();
 
-    if ($user = $result->fetchArray(SQLITE3_ASSOC)) {
-        // Проверяем пароль из cookies с хэшированным паролем в базе данных
-        if (password_verify($password, $user['pass'])) {
-            $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['role_id'] = $user['role_id'];
+            if ($user = $result->fetchArray(SQLITE3_ASSOC)) {
+                if (password_verify($password, $user['pass'])) {
+                    $_SESSION['user_id'] = $user['user_id'];
+                    $_SESSION['username'] = $user['username'];
+                    $_SESSION['role_id'] = $user['role_id'];
 
-            displayUserPage($db, $user['role_id'], $_SESSION['user_id']);
-            exit();
-        } else {
-            // Если пароль не совпадает, очистить кукиз и показать окно авторизации
-            setcookie("username", "", time() - 3600, "/");
-            setcookie("password", "", time() - 3600, "/");
-            echo _loadHtmlTemplate("html/authorization.html");
-            exit();
+                    displayUserPage($db, $user['role_id'], $_SESSION['user_id']);
+                    exit();
+                } else {
+                    // Очищаем куки и показываем окно авторизации
+                    setcookie("username", "", time() - 3600, "/");
+                    setcookie("password", "", time() - 3600, "/");
+                    echo _loadHtmlTemplate("html/authorization.html");
+                    exit();
+                }
+            } else {
+                setcookie("username", "", time() - 3600, "/");
+                setcookie("password", "", time() - 3600, "/");
+                echo _loadHtmlTemplate("html/authorization.html");
+                exit();
+            }
         }
     } else {
-        // Если пользователь не найден, очистить кукиз и показать окно авторизации
-        setcookie("username", "", time() - 3600, "/");
-        setcookie("password", "", time() - 3600, "/");
-        echo _loadHtmlTemplate("html/authorization.html");
-        exit();
-    }
-} else {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $username = $_POST['username'];
-        $password = $_POST['password'];
+        // Если пользователь еще не авторизован, обработка авторизации
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $username = $_POST['username'];
+            $password = $_POST['password'];
 
-        $stmtAuth = $db->prepare('SELECT * FROM users WHERE username = :username');
-        $stmtAuth->bindValue(':username', $username, SQLITE3_TEXT);
-        $result = $stmtAuth->execute();
+            $stmtAuth = $db->prepare('SELECT * FROM users WHERE username = :username');
+            $stmtAuth->bindValue(':username', $username, SQLITE3_TEXT);
+            $result = $stmtAuth->execute();
 
-        if ($user = $result->fetchArray(SQLITE3_ASSOC)) {
-            // Проверяем введенный пароль с хэшированным паролем из базы данных
-            if (password_verify($password, $user['pass'])) {
-                $_SESSION['user_id'] = $user['user_id'];
-                $_SESSION['username'] = $user['username'];
-                $_SESSION['role_id'] = $user['role_id'];
+            if ($user = $result->fetchArray(SQLITE3_ASSOC)) {
+                if (password_verify($password, $user['pass'])) {
+                    // Устанавливаем сессию и куки при успешной авторизации
+                    $_SESSION['user_id'] = $user['user_id'];
+                    $_SESSION['username'] = $user['username'];
+                    $_SESSION['role_id'] = $user['role_id'];
 
-                // Сохраняем идентификатор пользователя, а не пароль в кукиз
-                setcookie("username", $username, time() + (30 * 24 * 60 * 60), "/");
-                setcookie("password", $password, time() + (30 * 24 * 60 * 60), "/");  
+                    setcookie("username", $username, time() + (30 * 24 * 60 * 60), "/");
+                    setcookie("password", $password, time() + (30 * 24 * 60 * 60), "/");
 
-                displayUserPage($db, $user['role_id'], $_SESSION['user_id']);
-                exit();
+                    displayUserPage($db, $user['role_id'], $_SESSION['user_id']);
+                    exit();
+                } else {
+                    echo "<script>alert('Неверное имя пользователя или пароль.');</script>";
+                    echo _loadHtmlTemplate("html/authorization.html");
+                }
             } else {
-                echo "<script type='text/javascript'>alert('Неверное имя пользователя или пароль.');</script>";
+                echo "<script>alert('Неверное имя пользователя или пароль.');</script>";
                 echo _loadHtmlTemplate("html/authorization.html");
             }
-        } else {
-            echo "<script type='text/javascript'>alert('Неверное имя пользователя или пароль.');</script>";
-            echo _loadHtmlTemplate("html/authorization.html");
-        }
-    } 
-    elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        // Обработка GET-запросов
-        if (isset($_SESSION['user_id'])) {
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_SESSION['user_id'])) {
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role_id'];
             displayUserPage($db, $role, $userId);
+        } else {
+            echo _loadHtmlTemplate("html/authorization.html");
         }
     }
-    else {
-        echo _loadHtmlTemplate("html/authorization.html");
-    }
-}
 } catch (Exception $e) {
     echo "Не удалось открыть базу данных: " . $e->getMessage();
 }
