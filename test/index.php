@@ -27,6 +27,17 @@ function _getUsrNameFromDB($db, $userId) {
     return $user ? $user['username'] : 'Unknown';
 }
 
+function _getSurNameFromDB($db, $userId) {
+    $stmt = $db->prepare("SELECT surname, name FROM users WHERE user_id = :userId");
+    $stmt->bindValue(':userId', $userId, SQLITE3_INTEGER);
+    $result = $stmt->execute()->fetchArray(SQLITE3_ASSOC);
+    
+    if ($result) {
+        return $result['surname'] . " " . $result['name'];
+    }
+    return null;
+}
+
 function _getAvailableMonths($db, $userId) {
     $stmt = $db->prepare('SELECT DISTINCT strftime("%Y-%m", send_date) as month FROM reports WHERE user_id = :user_id ORDER BY month');
     $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
@@ -88,7 +99,8 @@ function _generateMonthsHtml($db, $userId) {
 function displayUserPage($db, $role, $userId) {
     $header = _loadHtmlTemplate("html/header.html");
     $username = _getUsrNameFromDB($db, $userId);
-    $user_info = "<div>Добро пожаловать, " . htmlspecialchars($username) . "!</div>";
+    $surname = _getSurNameFromDB($db, $userId);
+    $user_info = "<div>Добро пожаловать, " . htmlspecialchars($surname) . "!</div>";
     $header = str_replace("{LOGIN-INFO}", $user_info, $header);
 
     $monthsHtml = _generateMonthsHtml($db, $userId);
@@ -237,48 +249,55 @@ try {
     }
 
     // Создание таблиц, если они не существуют
-    $db->exec("CREATE TABLE IF NOT EXISTS roles (role_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE)");
-    $db->exec("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, pass TEXT, surname TEXT, name TEXT, lastname TEXT, unit INTEGER, role_id INTEGER, FOREIGN KEY (role_id) REFERENCES roles(role_id))");
-    $db->exec("CREATE TABLE IF NOT EXISTS reports (report_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, report_text TEXT, send_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(user_id))");
-    
-    $names = array('head', 'admin', 'user');
-    $checkRole = $db->prepare('SELECT COUNT(*) AS count FROM roles WHERE name = :name');
-    $stmtRole = $db->prepare('INSERT INTO roles (name) VALUES (:name)');
-    
-    foreach ($names as $name) {
-        $checkRole->bindValue(':name', $name, SQLITE3_TEXT);
-        $result = $checkRole->execute()->fetchArray(SQLITE3_ASSOC);
-    
-        if ($result['count'] == 0) {
-            $stmtRole->bindValue(':name', $name, SQLITE3_TEXT);
-            $stmtRole->execute();
-        }
+    // Создание таблиц
+$db->exec("CREATE TABLE IF NOT EXISTS roles (role_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE)");
+$db->exec("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, pass TEXT, surname TEXT, name TEXT, lastname TEXT, unit INTEGER, role_id INTEGER, FOREIGN KEY (role_id) REFERENCES roles(role_id))");
+$db->exec("CREATE TABLE IF NOT EXISTS reports (report_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, report_text TEXT, send_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(user_id))");
+
+// Добавление ролей
+$names = array('head', 'admin', 'user');
+$checkRole = $db->prepare('SELECT COUNT(*) AS count FROM roles WHERE name = :name');
+$stmtRole = $db->prepare('INSERT INTO roles (name) VALUES (:name)');
+
+foreach ($names as $name) {
+    $checkRole->bindValue(':name', $name, SQLITE3_TEXT);
+    $result = $checkRole->execute()->fetchArray(SQLITE3_ASSOC);
+
+    if ($result['count'] == 0) {
+        $stmtRole->bindValue(':name', $name, SQLITE3_TEXT);
+        $stmtRole->execute();
     }
-    
-    $users = array(
-        array('username' => 'head', 'pass' => 'passhead', 'surname' => 'Иванов', 'name' => 'Иван', 'lastname' => 'Иванович', 'unit' => 143, 'role_id' => 1),
-        array('username' => 'admin', 'pass' => 'passadmin', 'surname' => 'Петров', 'name' => 'Петр', 'lastname' => 'Петрович', 'unit' => 142, 'role_id' => 2),
-        array('username' => 'user', 'pass' => 'passuser', 'surname' => 'Сергеев', 'name' => 'Сергей', 'lastname' => 'Сергеевич', 'unit' => 141, 'role_id' => 3)
-    );
-    
-    $checkUser = $db->prepare('SELECT COUNT(*) AS count FROM users WHERE username = :username');
-    $stmtUser = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id)');
-    
-    foreach ($users as $user) {
-        $checkUser->bindValue(':username', $user['username'], SQLITE3_TEXT);
-        $result = $checkUser->execute()->fetchArray(SQLITE3_ASSOC);
-    
-        if ($result['count'] == 0) {
-            $stmtUser->bindValue(':username', $user['username'], SQLITE3_TEXT);
-            $stmtUser->bindValue(':pass', $user['pass'], SQLITE3_TEXT);
-            $stmtUser->bindValue(':surname', $user['surname'], SQLITE3_TEXT);
-            $stmtUser->bindValue(':name', $user['name'], SQLITE3_TEXT);
-            $stmtUser->bindValue(':lastname', $user['lastname'], SQLITE3_TEXT);
-            $stmtUser->bindValue(':unit', $user['unit'], SQLITE3_INTEGER);
-            $stmtUser->bindValue(':role_id', $user['role_id'], SQLITE3_INTEGER);
-            $stmtUser->execute();
-        }
+}
+
+// Пользователи с паролями
+$users = array(
+    array('username' => 'head', 'pass' => 'passhead', 'surname' => 'Иванов', 'name' => 'Иван', 'lastname' => 'Иванович', 'unit' => 143, 'role_id' => 1),
+    array('username' => 'admin', 'pass' => 'passadmin', 'surname' => 'Петров', 'name' => 'Петр', 'lastname' => 'Петрович', 'unit' => 142, 'role_id' => 2),
+    array('username' => 'user', 'pass' => 'passuser', 'surname' => 'Сергеев', 'name' => 'Сергей', 'lastname' => 'Сергеевич', 'unit' => 141, 'role_id' => 3)
+);
+
+$checkUser = $db->prepare('SELECT COUNT(*) AS count FROM users WHERE username = :username');
+$stmtUser = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id)');
+
+foreach ($users as $user) {
+    $checkUser->bindValue(':username', $user['username'], SQLITE3_TEXT);
+    $result = $checkUser->execute()->fetchArray(SQLITE3_ASSOC);
+
+    if ($result['count'] == 0) {
+        // Хэширование пароля
+        $hashedPassword = password_hash($user['pass'], PASSWORD_DEFAULT);
+        
+        // Вставка пользователя с хэшированным паролем
+        $stmtUser->bindValue(':username', $user['username'], SQLITE3_TEXT);
+        $stmtUser->bindValue(':pass', $hashedPassword, SQLITE3_TEXT);
+        $stmtUser->bindValue(':surname', $user['surname'], SQLITE3_TEXT);
+        $stmtUser->bindValue(':name', $user['name'], SQLITE3_TEXT);
+        $stmtUser->bindValue(':lastname', $user['lastname'], SQLITE3_TEXT);
+        $stmtUser->bindValue(':unit', $user['unit'], SQLITE3_INTEGER);
+        $stmtUser->bindValue(':role_id', $user['role_id'], SQLITE3_INTEGER);
+        $stmtUser->execute();
     }
+}
 
     // Проверка куки для автоматической авторизации
     if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) { 
