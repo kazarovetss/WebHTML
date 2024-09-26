@@ -1,6 +1,5 @@
 ﻿<?php
 session_set_cookie_params(30 * 24 * 60 * 60); // 30 дней в секундах
-
 session_start();
 set_time_limit(0);
 date_default_timezone_set('Europe/Minsk');
@@ -71,7 +70,6 @@ function _generateMonthsHtml($db, $userId) {
         $monthLinks = '';
         foreach ($allMonths as $num => $name) {
             $monthLinks .= "<span>$name</span> ";
-            $year = "<span>NONE</span> ";
         }
         $yearHtml = _loadHtmlTemplate("html/date.html");
         $yearHtml = str_replace("{YEAR}", "<span>NONE</span>", $yearHtml);
@@ -96,9 +94,8 @@ function _generateMonthsHtml($db, $userId) {
     return $html;
 }
 
-function displayUserPage($db, $role, $userId) {
+function displayUserPage($db, $role, $isAdmin, $userId) {
     $header = _loadHtmlTemplate("html/header.html");
-    $username = _getUsrNameFromDB($db, $userId);
     $surname = _getSurNameFromDB($db, $userId);
     $user_info = "<div>Добро пожаловать, " . htmlspecialchars($surname) . "!</div>";
     $header = str_replace("{LOGIN-INFO}", $user_info, $header);
@@ -106,11 +103,13 @@ function displayUserPage($db, $role, $userId) {
     $monthsHtml = _generateMonthsHtml($db, $userId);
 
     $bodyFile = "html/body-employee.html";
-    if ($role == 1) {
-        $bodyFile = "html/body-head.html";
-    } elseif ($role == 2) {
-        $bodyFile = "html/admin.html";
+    if ($isAdmin) {
+        $bodyFile = "html/admin.html"; // Приоритет для администратора
+    } elseif ($role == 1) {
+        $bodyFile = "html/body-head.html"; // Вторая проверка на руководителя
     }
+
+
 
     $body = _loadHtmlTemplate($bodyFile);
     $body = str_replace("{DATE}", $monthsHtml, $body);
@@ -146,7 +145,7 @@ try {
         $action = isset($_POST['action']) ? $_POST['action'] : '';
 
         if ($action === 'get_users') {
-            $stmt = $db->prepare('SELECT user_id, username, pass, surname, name, lastname, unit, role_id FROM users');
+            $stmt = $db->prepare('SELECT user_id, username, pass, surname, name, lastname, unit, role_id, is_admin FROM users');
             $result = $stmt->execute();
             $users = array();
             while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
@@ -158,7 +157,7 @@ try {
         }
 
         if ($action === 'update_user') {
-            //$userId = isset($_POST['user_id']) ? $_POST['user_id'] : '';
+            $userId = isset($_POST['user_id']) ? $_POST['user_id'] : '';
             $username = isset($_POST['username']) ? $_POST['username'] : '';
             $pass = isset($_POST['pass']) ? $_POST['pass'] : '';
             $surname = isset($_POST['surname']) ? $_POST['surname'] : '';
@@ -166,17 +165,19 @@ try {
             $lastname = isset($_POST['lastname']) ? $_POST['lastname'] : '';
             $unit = isset($_POST['unit']) ? $_POST['unit'] : '';
             $roleId = isset($_POST['role_id']) ? $_POST['role_id'] : '';
-    
-            $stmt = $db->prepare('UPDATE users SET username = :username, pass = :pass, surname = :surname, name = :name, lastname = :lastname, unit = :unit, role_id = :role_id WHERE user_id = :user_id');
-            //$stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
+            $isAdmin = isset($_POST['is_admin']) ? $_POST['is_admin'] : 0;
+
+            $stmt = $db->prepare('UPDATE users SET username = :username, pass = :pass, surname = :surname, name = :name, lastname = :lastname, unit = :unit, role_id = :role_id, is_admin = :is_admin WHERE user_id = :user_id');
+            $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
             $stmt->bindValue(':username', $username, SQLITE3_TEXT);
-            $stmt->bindValue(':pass', $pass, SQLITE3_TEXT);
+            $stmt->bindValue(':pass', password_hash($pass, PASSWORD_DEFAULT), SQLITE3_TEXT);
             $stmt->bindValue(':surname', $surname, SQLITE3_TEXT);
             $stmt->bindValue(':name', $name, SQLITE3_TEXT);
             $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
             $stmt->bindValue(':unit', $unit, SQLITE3_TEXT); 
             $stmt->bindValue(':role_id', $roleId, SQLITE3_INTEGER);
-    
+            $stmt->bindValue(':is_admin', $isAdmin, SQLITE3_INTEGER);
+
             if ($stmt->execute()) {
                 echo json_encode(array('status' => 'success'));
             } else {
@@ -184,26 +185,27 @@ try {
             }
             exit();
         }
-    
+
         if ($action === 'add_user') {
             $username = isset($_POST['username']) ? $_POST['username'] : '';
             $pass = isset($_POST['pass']) ? $_POST['pass'] : '';
-            $hashedPass = password_hash($pass, PASSWORD_DEFAULT); // Хэшируем пароль
             $surname = isset($_POST['surname']) ? $_POST['surname'] : '';
             $name = isset($_POST['name']) ? $_POST['name'] : '';
             $lastname = isset($_POST['lastname']) ? $_POST['lastname'] : '';
             $unit = isset($_POST['unit']) ? $_POST['unit'] : '';
             $roleId = isset($_POST['role_id']) ? $_POST['role_id'] : '';
-        
-            $stmt = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id)');
+            $isAdmin = isset($_POST['is_admin']) ? $_POST['is_admin'] : 0;
+
+            $stmt = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id, is_admin) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :is_admin)');
             $stmt->bindValue(':username', $username, SQLITE3_TEXT);
-            $stmt->bindValue(':pass', $hashedPass, SQLITE3_TEXT); // Сохраняем хэшированный пароль
+            $stmt->bindValue(':pass', password_hash($pass, PASSWORD_DEFAULT), SQLITE3_TEXT); // Хэшируем пароль
             $stmt->bindValue(':surname', $surname, SQLITE3_TEXT);
             $stmt->bindValue(':name', $name, SQLITE3_TEXT);
             $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
             $stmt->bindValue(':unit', $unit, SQLITE3_TEXT);
             $stmt->bindValue(':role_id', $roleId, SQLITE3_INTEGER);
-        
+            $stmt->bindValue(':is_admin', $isAdmin, SQLITE3_INTEGER);
+
             if ($stmt->execute()) {
                 echo json_encode(array('status' => 'success'));
             } else {
@@ -211,13 +213,13 @@ try {
             }
             exit();
         }
-        
+
         if ($action === 'delete_user') {
             $userId = isset($_POST['user_id']) ? $_POST['user_id'] : '';
-    
+
             $stmt = $db->prepare('DELETE FROM users WHERE user_id = :user_id');
             $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
-    
+
             if ($stmt->execute()) {
                 echo json_encode(array('status' => 'success'));
             } else {
@@ -229,14 +231,14 @@ try {
         if ($action === 'reset_password') {
             $userId = isset($_POST['user_id']) ? $_POST['user_id'] : '';
             $newPassword = isset($_POST['new_password']) ? $_POST['new_password'] : '';
-        
+
             // Безопасное хэширование пароля
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        
+
             $stmt = $db->prepare('UPDATE users SET pass = :pass WHERE user_id = :user_id');
             $stmt->bindValue(':pass', $hashedPassword, SQLITE3_TEXT);
             $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
-        
+
             if ($stmt->execute()) {
                 echo json_encode(array('status' => 'success'));
             } else {
@@ -244,18 +246,32 @@ try {
             }
             exit();
         }
-        
-        
     }
 
-    // Создание таблиц, если они не существуют
     // Создание таблиц
-$db->exec("CREATE TABLE IF NOT EXISTS roles (role_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE)");
-$db->exec("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, pass TEXT, surname TEXT, name TEXT, lastname TEXT, unit INTEGER, role_id INTEGER, FOREIGN KEY (role_id) REFERENCES roles(role_id))");
-$db->exec("CREATE TABLE IF NOT EXISTS reports (report_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, report_text TEXT, send_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(user_id))");
+    $db->exec("CREATE TABLE IF NOT EXISTS roles (role_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE)");
+    $db->exec("CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        username TEXT UNIQUE, 
+        pass TEXT, 
+        surname TEXT, 
+        name TEXT, 
+        lastname TEXT, 
+        unit INTEGER, 
+        role_id INTEGER,
+        is_admin INTEGER DEFAULT 0,
+        FOREIGN KEY (role_id) REFERENCES roles(role_id)
+    )");
+    $db->exec("CREATE TABLE IF NOT EXISTS reports (
+        report_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        user_id INTEGER, 
+        report_text TEXT, 
+        send_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+        FOREIGN KEY (user_id) REFERENCES users(user_id)
+    )");
 
-// Добавление ролей
-$names = array('head', 'admin', 'user');
+    // Добавление пользователей с булевым признаком is_admin
+    $names = array('head','user');
 $checkRole = $db->prepare('SELECT COUNT(*) AS count FROM roles WHERE name = :name');
 $stmtRole = $db->prepare('INSERT INTO roles (name) VALUES (:name)');
 
@@ -268,36 +284,35 @@ foreach ($names as $name) {
         $stmtRole->execute();
     }
 }
+    $users = array(
+        array('username' => 'head', 'pass' => 'passhead', 'surname' => 'Иванов', 'name' => 'Иван', 'lastname' => 'Иванович', 'unit' => 143, 'role_id' => 1,'is_admin' => 0),
+        array('username' => 'admin', 'pass' => 'passadmin', 'surname' => 'Петров', 'name' => 'Петр', 'lastname' => 'Петрович', 'unit' => 142,'role_id' => 1 ,'is_admin' => 1),
+        array('username' => 'user', 'pass' => 'passuser', 'surname' => 'Сергеев', 'name' => 'Сергей', 'lastname' => 'Сергеевич', 'unit' => 141, 'role_id' => 2,'is_admin' => 0)
+    );
 
-// Пользователи с паролями
-$users = array(
-    array('username' => 'head', 'pass' => 'passhead', 'surname' => 'Иванов', 'name' => 'Иван', 'lastname' => 'Иванович', 'unit' => 143, 'role_id' => 1),
-    array('username' => 'admin', 'pass' => 'passadmin', 'surname' => 'Петров', 'name' => 'Петр', 'lastname' => 'Петрович', 'unit' => 142, 'role_id' => 2),
-    array('username' => 'user', 'pass' => 'passuser', 'surname' => 'Сергеев', 'name' => 'Сергей', 'lastname' => 'Сергеевич', 'unit' => 141, 'role_id' => 3)
-);
+    $checkUser = $db->prepare('SELECT COUNT(*) AS count FROM users WHERE username = :username');
+    $stmtUser = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id, is_admin) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id, :is_admin)');
 
-$checkUser = $db->prepare('SELECT COUNT(*) AS count FROM users WHERE username = :username');
-$stmtUser = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id)');
+    foreach ($users as $user) {
+        $checkUser->bindValue(':username', $user['username'], SQLITE3_TEXT);
+        $result = $checkUser->execute()->fetchArray(SQLITE3_ASSOC);
 
-foreach ($users as $user) {
-    $checkUser->bindValue(':username', $user['username'], SQLITE3_TEXT);
-    $result = $checkUser->execute()->fetchArray(SQLITE3_ASSOC);
+        if ($result['count'] == 0) {
+            // Хэширование пароля
+            $hashedPassword = password_hash($user['pass'], PASSWORD_DEFAULT);
 
-    if ($result['count'] == 0) {
-        // Хэширование пароля
-        $hashedPassword = password_hash($user['pass'], PASSWORD_DEFAULT);
-        
-        // Вставка пользователя с хэшированным паролем
-        $stmtUser->bindValue(':username', $user['username'], SQLITE3_TEXT);
-        $stmtUser->bindValue(':pass', $hashedPassword, SQLITE3_TEXT);
-        $stmtUser->bindValue(':surname', $user['surname'], SQLITE3_TEXT);
-        $stmtUser->bindValue(':name', $user['name'], SQLITE3_TEXT);
-        $stmtUser->bindValue(':lastname', $user['lastname'], SQLITE3_TEXT);
-        $stmtUser->bindValue(':unit', $user['unit'], SQLITE3_INTEGER);
-        $stmtUser->bindValue(':role_id', $user['role_id'], SQLITE3_INTEGER);
-        $stmtUser->execute();
+            // Вставка пользователя с хэшированным паролем и булевым признаком is_admin
+            $stmtUser->bindValue(':username', $user['username'], SQLITE3_TEXT);
+            $stmtUser->bindValue(':pass', $hashedPassword, SQLITE3_TEXT);
+            $stmtUser->bindValue(':surname', $user['surname'], SQLITE3_TEXT);
+            $stmtUser->bindValue(':name', $user['name'], SQLITE3_TEXT);
+            $stmtUser->bindValue(':lastname', $user['lastname'], SQLITE3_TEXT);
+            $stmtUser->bindValue(':unit', $user['unit'], SQLITE3_INTEGER);
+            $stmtUser->bindValue(':role_id', $user['role_id'], SQLITE3_INTEGER);
+            $stmtUser->bindValue(':is_admin', $user['is_admin'], SQLITE3_INTEGER);
+            $stmtUser->execute();
+        }
     }
-}
 
     // Проверка куки для автоматической авторизации
     if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) { 
@@ -323,8 +338,9 @@ foreach ($users as $user) {
                     $_SESSION['user_id'] = $user['user_id'];
                     $_SESSION['username'] = $user['username'];
                     $_SESSION['role_id'] = $user['role_id'];
+                    $_SESSION['is_admin'] = $user['is_admin'];
 
-                    displayUserPage($db, $user['role_id'], $_SESSION['user_id']);
+                    displayUserPage($db,$user['role_id'], $user['is_admin'], $_SESSION['user_id']);
                     exit();
                 } else {
                     // Очищаем куки и показываем окно авторизации
@@ -356,11 +372,12 @@ foreach ($users as $user) {
                     $_SESSION['user_id'] = $user['user_id'];
                     $_SESSION['username'] = $user['username'];
                     $_SESSION['role_id'] = $user['role_id'];
+                    $_SESSION['is_admin'] = $user['is_admin'];
 
                     setcookie("username", $username, time() + (30 * 24 * 60 * 60), "/");
                     setcookie("password", $password, time() + (30 * 24 * 60 * 60), "/");
 
-                    displayUserPage($db, $user['role_id'], $_SESSION['user_id']);
+                    displayUserPage($db, $user['role_id'], $user['is_admin'], $_SESSION['user_id']);
                     exit();
                 } else {
                     echo "<script>alert('Неверное имя пользователя или пароль.');</script>";
@@ -373,7 +390,8 @@ foreach ($users as $user) {
         } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_SESSION['user_id'])) {
             $userId = $_SESSION['user_id'];
             $role = $_SESSION['role_id'];
-            displayUserPage($db, $role, $userId);
+            $isAdmin = $_SESSION['is_admin'];
+            displayUserPage($db, $role, $isAdmin, $userId);
         } else {
             echo _loadHtmlTemplate("html/authorization.html");
         }
