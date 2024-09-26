@@ -118,7 +118,7 @@ function displaySettings(data, page) {
     let table = document.createElement('table');
     let headerRow = document.createElement('tr');
 
-    ['Username', 'Surname', 'Name', 'Lastname', 'Unit', 'Role ID','Password', 'Actions'].forEach(headerText => {
+    ['Username', 'Surname', 'Name', 'Lastname', 'Unit', 'Role', 'Is Admin', 'Password', 'Actions'].forEach(headerText => {
         let header = document.createElement('th');
         header.textContent = headerText;
         headerRow.appendChild(header);
@@ -133,40 +133,53 @@ function displaySettings(data, page) {
     paginatedData.forEach(user => {
         let row = document.createElement('tr');
 
-        ['username', 'surname', 'name', 'lastname', 'unit', 'role_id'].forEach(key => {
+        // Отображаем основные поля пользователя
+        ['username', 'surname', 'name', 'lastname', 'unit'].forEach(key => {
             let cell = document.createElement('td');
-
-            if (key === 'role_id') {
-                let select = document.createElement('select');
-                select.dataset.key = key;
-
-                let options = [
-                    { value: '1', text: 'Head' },
-                    { value: '2', text: 'Admin' },
-                    { value: '3', text: 'Employee' }
-                ];
-
-                options.forEach(optionData => {
-                    let option = document.createElement('option');
-                    option.value = optionData.value;
-                    option.textContent = optionData.text;
-                    if (user[key] == optionData.value) {
-                        option.selected = true;
-                    }
-                    select.appendChild(option);
-                });
-
-                cell.appendChild(select);
-            } else {
-                let input = document.createElement('input');
-                input.type = 'text';
-                input.value = user[key];
-                input.dataset.key = key;
-                cell.appendChild(input);
-            }
-
+            let input = document.createElement('input');
+            input.type = 'text';
+            input.value = user[key];
+            input.dataset.key = key;
+            cell.appendChild(input);
             row.appendChild(cell);
         });
+
+        // Отображение роли с выпадающим списком
+        let roleCell = document.createElement('td');
+        let roleSelect = document.createElement('select');
+        roleSelect.dataset.key = 'role_id';
+
+        let options = [
+            { value: '1', text: 'Head' },
+            { value: '2', text: 'User' }
+        ];
+
+        options.forEach(optionData => {
+            let option = document.createElement('option');
+            option.value = optionData.value;
+            option.textContent = optionData.text;
+            if (user['role_id'] == optionData.value) {
+                option.selected = true;
+            }
+            roleSelect.appendChild(option);
+        });
+
+        roleCell.appendChild(roleSelect);
+        row.appendChild(roleCell);
+
+        // Чекбокс для is_admin
+        let isAdminCell = document.createElement('td');
+        let isAdminCheckbox = document.createElement('input');
+        isAdminCheckbox.type = 'checkbox';
+        isAdminCheckbox.dataset.key = 'is_admin';
+        isAdminCheckbox.checked = user['is_admin'] == 1;
+
+        if (user['role_id'] == '2') {
+            isAdminCheckbox.disabled = true; // Блокируем чекбокс для User
+        }
+
+        isAdminCell.appendChild(isAdminCheckbox);
+        row.appendChild(isAdminCell);
 
         // Добавляем кнопку сброса пароля
         let passwordResetCell = document.createElement('td');
@@ -203,6 +216,7 @@ function displaySettings(data, page) {
     userInfoDiv.appendChild(table);
     setupPagination(data.length, page, fetchUsers, true);
 }
+
 
 // Функция для сброса пароля на "pass"
 function resetPassword(userId) {
@@ -276,6 +290,7 @@ function displayAddUserForm() {
         form.appendChild(document.createElement('br'));
     });
 
+    // Выбор роли
     let roleLabel = document.createElement('label');
     roleLabel.textContent = 'Role';
     let roleSelect = document.createElement('select');
@@ -284,8 +299,7 @@ function displayAddUserForm() {
 
     let roles = {
         '1': 'Head',
-        '2': 'Admin',
-        '3': 'Employee'
+        '2': 'User'
     };
 
     for (let value in roles) {
@@ -299,6 +313,7 @@ function displayAddUserForm() {
     form.appendChild(roleLabel);
     form.appendChild(document.createElement('br'));
 
+    // Кнопка для добавления пользователя
     let submitButton = document.createElement('button');
     submitButton.textContent = 'Add User';
     submitButton.type = 'button';
@@ -309,6 +324,7 @@ function displayAddUserForm() {
 
     userInfoDiv.appendChild(form);
 }
+
 
 function displayGeneralSettings() {
     const userInfoDiv = document.getElementById('user-info');
@@ -359,11 +375,19 @@ function saveGeneralSettings() {
 function addUser() {
     let formData = new URLSearchParams();
     formData.append('action', 'add_user');
+    
+    // Поля, которые будут передаваться
     const fields = ['username', 'pass', 'surname', 'name', 'lastname', 'unit', 'role_id'];
 
+    // Добавляем значения этих полей
     fields.forEach(field => {
         formData.append(field, document.getElementById(field).value);
     });
+
+    // Устанавливаем флаг is_admin для роли Head как 0 по дефолту
+    let roleValue = document.getElementById('role_id').value;
+    let isAdmin = (roleValue == '1') ? 0 : 0; 
+    formData.append('is_admin', isAdmin);
 
     fetch('index.php', {
         method: 'POST',
@@ -376,16 +400,19 @@ function addUser() {
     .then(data => {
         if (data.status === 'success') {
             alert('Пользователь успешно добавлен');
-            // Очистить только поля ввода
+            // Очистить поля после добавления
             fields.forEach(field => {
                 document.getElementById(field).value = '';
             });
         } else {
             alert('Ошибка добавления пользователя');
         }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка при отправке запроса:', error);
+        alert('Произошла ошибка при добавлении пользователя');
     });
 }
-
 
 function saveUser(row, userId) {
     let inputs = row.querySelectorAll('input, select');
@@ -395,7 +422,11 @@ function saveUser(row, userId) {
     };
 
     inputs.forEach(input => {
-        userData[input.dataset.key] = input.value;
+        if (input.type === 'checkbox') {
+            userData[input.dataset.key] = input.checked ? 1 : 0; // Для чекбокса is_admin
+        } else {
+            userData[input.dataset.key] = input.value;
+        }
     });
 
     fetch('index.php', {
@@ -414,6 +445,7 @@ function saveUser(row, userId) {
         }
     });
 }
+
 
 function setupPagination(totalRows, currentPage, fetchFunction, isSettings = false) {
     const totalPages = Math.ceil(totalRows / rowsPerPage);
