@@ -165,7 +165,6 @@ try {
             $lastname = isset($_POST['lastname']) ? $_POST['lastname'] : '';
             $unit = isset($_POST['unit']) ? $_POST['unit'] : '';
             $roleId = isset($_POST['role_id']) ? $_POST['role_id'] : '';
-            $isAdmin = isset($_POST['is_admin']) ? $_POST['is_admin'] : 0;
 
             $stmt = $db->prepare('UPDATE users SET username = :username, pass = :pass, surname = :surname, name = :name, lastname = :lastname, unit = :unit, role_id = :role_id, is_admin = :is_admin WHERE user_id = :user_id');
             $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
@@ -176,7 +175,7 @@ try {
             $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
             $stmt->bindValue(':unit', $unit, SQLITE3_TEXT); 
             $stmt->bindValue(':role_id', $roleId, SQLITE3_INTEGER);
-            $stmt->bindValue(':is_admin', $isAdmin, SQLITE3_INTEGER);
+        
 
             if ($stmt->execute()) {
                 echo json_encode(array('status' => 'success'));
@@ -194,9 +193,8 @@ try {
             $lastname = isset($_POST['lastname']) ? $_POST['lastname'] : '';
             $unit = isset($_POST['unit']) ? $_POST['unit'] : '';
             $roleId = isset($_POST['role_id']) ? $_POST['role_id'] : '';
-            $isAdmin = isset($_POST['is_admin']) ? $_POST['is_admin'] : 0;
 
-            $stmt = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id, is_admin) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id, :is_admin)');
+            $stmt = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id)');
             $stmt->bindValue(':username', $username, SQLITE3_TEXT);
             $stmt->bindValue(':pass', password_hash($pass, PASSWORD_DEFAULT), SQLITE3_TEXT); // Хэшируем пароль
             $stmt->bindValue(':surname', $surname, SQLITE3_TEXT);
@@ -204,7 +202,6 @@ try {
             $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
             $stmt->bindValue(':unit', $unit, SQLITE3_TEXT);
             $stmt->bindValue(':role_id', $roleId, SQLITE3_INTEGER);
-            $stmt->bindValue(':is_admin', $isAdmin, SQLITE3_INTEGER);
 
             if ($stmt->execute()) {
                 echo json_encode(array('status' => 'success'));
@@ -309,7 +306,6 @@ foreach ($names as $name) {
             $stmtUser->bindValue(':lastname', $user['lastname'], SQLITE3_TEXT);
             $stmtUser->bindValue(':unit', $user['unit'], SQLITE3_INTEGER);
             $stmtUser->bindValue(':role_id', $user['role_id'], SQLITE3_INTEGER);
-            $stmtUser->bindValue(':is_admin', $user['is_admin'], SQLITE3_INTEGER);
             $stmtUser->execute();
         }
     }
@@ -359,8 +355,8 @@ foreach ($names as $name) {
     } else {
         // Если пользователь еще не авторизован, обработка авторизации
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['username'];
-            $password = $_POST['password'];
+            $username = isset($_POST['username']) ? $_POST['username'] : '';
+            $password = isset($_POST['password']) ? $_POST['password'] : '';
 
             $stmtAuth = $db->prepare('SELECT * FROM users WHERE username = :username');
             $stmtAuth->bindValue(':username', $username, SQLITE3_TEXT);

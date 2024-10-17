@@ -8,6 +8,7 @@
     align-items: center;
     flex-direction: column;
     height: 100vh;
+    box-sizing: border-box;
 }
 
 /* Стили для header */
@@ -59,21 +60,40 @@ a:hover {
 }
 
 main {
-    width: 100%;
-    max-width: 1600px;
-    margin: 0 auto;
+    width: 90vw; 
+    height: auto; 
+    min-height: 90vh; 
     background-color: #f0f0f0;
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
-    margin-top:10px;
+    margin-top: 10px;
+    box-sizing: border-box; 
+    display: flex;
+    align-items: center;
+    flex-direction: column;
 }
+
+
+@media (max-width: 768px) {
+    main {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    main {
+        padding: 5px;
+    }
+}
+
 
 
 .main-container {
     display: flex;
-    justify-content: flex-start;
+    justify-content:center;
     padding: 20px;
+    width: 80%;
 }
 
 .data-container{
@@ -225,23 +245,42 @@ textarea#field {
     padding: 10px 0px;
 }
 /* админ страница */
+
 .admin-container {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .Settings {
-    width: 80%;
-    padding: 5px;
+    width: 70%;
+    padding: 10px;
     margin: 10px;
+    box-sizing: border-box;
 }
 
 .AddUser {
-    width:20%;
-    padding: 5px;
+    width: 30%;
+    padding: 10px;
     margin: 10px;
+    box-sizing: border-box;
+    padding: 10px;
+    margin: 10px;
+    box-sizing: border-box;
 }
+
+.settings-and-adduser {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 1200px;
+}
+
 #Settings, #Show, #AddUser, #GeneralSettings {
     background-color: #4CAF50; 
     color: white; 
@@ -254,7 +293,7 @@ textarea#field {
     border-radius: 8px; 
     cursor: pointer; 
     transition: background-color 0.3s; 
-    margin: 0 10px;
+    margin: 10px 0;
 }
 
 #Settings:hover, #Show:hover, #AddUser:hover, #GeneralSettings:hover {
@@ -263,30 +302,32 @@ textarea#field {
 
 #user-info {
     display: flex;
-    justify-content: center;
+    flex-direction: row;
+    align-items: flex-start;
     width: 100%; 
     overflow-x: auto; 
+    margin-top: 20px;
 }
 
 table {
-    min-width: 1000px; 
+    width: 100%;
+    max-width: 1200px;
     border-collapse: collapse;
     margin: 25px 0;
     font-size: 18px;
     text-align: left;
-    table-layout: fixed; /* Это помогает установить фиксированное размещение ячеек */
+    table-layout: auto;
 }
 
 table th, table td {
     padding: 12px;
     border: 1px solid #ddd;
-    width: 10%; 
+    word-wrap: break-word;
 }
 
 table th {
     background-color: #4CAF50;
     color: white;
-    width: auto; 
 }
 
 input[type="text"], input[type="password"] {
@@ -361,6 +402,7 @@ button:hover {
 }
 
 .settings-form {
+    width: 100%;
     max-width: 600px;
     margin: 20px auto;
     padding: 20px;
