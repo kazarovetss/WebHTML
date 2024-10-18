@@ -103,7 +103,7 @@ function displayUserPage($db, $role, $isAdmin, $userId) {
     $monthsHtml = _generateMonthsHtml($db, $userId);
 
     $bodyFile = "html/body-employee.html";
-    if ($isAdmin) {
+    if ($role == 2) {
         $bodyFile = "html/admin.html"; // Приоритет для администратора
     } elseif ($role == 1) {
         $bodyFile = "html/body-head.html"; // Вторая проверка на руководителя
@@ -283,8 +283,8 @@ foreach ($names as $name) {
 }
     $users = array(
         array('username' => 'head', 'pass' => 'passhead', 'surname' => 'Иванов', 'name' => 'Иван', 'lastname' => 'Иванович', 'unit' => 143, 'role_id' => 1,'is_admin' => 0),
-        array('username' => 'admin', 'pass' => 'passadmin', 'surname' => 'Петров', 'name' => 'Петр', 'lastname' => 'Петрович', 'unit' => 142,'role_id' => 1 ,'is_admin' => 1),
-        array('username' => 'user', 'pass' => 'passuser', 'surname' => 'Сергеев', 'name' => 'Сергей', 'lastname' => 'Сергеевич', 'unit' => 141, 'role_id' => 2,'is_admin' => 0)
+        array('username' => 'admin', 'pass' => 'passadmin', 'surname' => 'Петров', 'name' => 'Петр', 'lastname' => 'Петрович', 'unit' => 142,'role_id' => 2 ,'is_admin' => 1),
+        array('username' => 'user', 'pass' => 'passuser', 'surname' => 'Сергеев', 'name' => 'Сергей', 'lastname' => 'Сергеевич', 'unit' => 141, 'role_id' => 3,'is_admin' => 0)
     );
 
     $checkUser = $db->prepare('SELECT COUNT(*) AS count FROM users WHERE username = :username');
