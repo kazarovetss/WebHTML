@@ -121,7 +121,11 @@ function displaySettings(data, page) {
     let table = document.createElement('table');
     let headerRow = document.createElement('tr');
 
+<<<<<<< HEAD
     ['Роль', 'Фамилия', 'Имя', 'Отчество', 'Подразделение', 'Пароль', 'Действия'].forEach(headerText => {
+=======
+    ['Username', 'Surname', 'Name', 'Lastname', 'Unit', 'Role', 'Is Admin', 'Password', 'Actions'].forEach(headerText => {
+>>>>>>> aa7c750fb9a7eec7bd9bafb37a16d33ec39e4e38
         let header = document.createElement('th');
         header.textContent = headerText;
         headerRow.appendChild(header);
@@ -167,6 +171,26 @@ function displaySettings(data, page) {
             roleSelect.appendChild(option);
         });
 
+<<<<<<< HEAD
+=======
+        roleCell.appendChild(roleSelect);
+        row.appendChild(roleCell);
+
+        // Чекбокс для is_admin
+        let isAdminCell = document.createElement('td');
+        let isAdminCheckbox = document.createElement('input');
+        isAdminCheckbox.type = 'checkbox';
+        isAdminCheckbox.dataset.key = 'is_admin';
+        isAdminCheckbox.checked = user['is_admin'] == 1;
+
+        if (user['role_id'] == '2') {
+            isAdminCheckbox.disabled = true; // Блокируем чекбокс для User
+        }
+
+        isAdminCell.appendChild(isAdminCheckbox);
+        row.appendChild(isAdminCell);
+
+>>>>>>> aa7c750fb9a7eec7bd9bafb37a16d33ec39e4e38
         // Добавляем кнопку сброса пароля
         let passwordResetCell = document.createElement('td');
         let resetButton = document.createElement('button');
@@ -363,7 +387,11 @@ function addUser() {
     formData.append('action', 'add_user');
     
     // Поля, которые будут передаваться
+<<<<<<< HEAD
     const fields = ['username', 'pass', 'surname', 'name', 'lastname', 'unit'];
+=======
+    const fields = ['username', 'pass', 'surname', 'name', 'lastname', 'unit', 'role_id'];
+>>>>>>> aa7c750fb9a7eec7bd9bafb37a16d33ec39e4e38
 
     // Добавляем значения этих полей
     fields.forEach(field => {

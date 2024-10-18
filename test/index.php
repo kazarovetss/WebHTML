@@ -194,7 +194,11 @@ try {
             $unit = isset($_POST['unit']) ? $_POST['unit'] : '';
             $roleId = isset($_POST['role_id']) ? $_POST['role_id'] : '';
 
+<<<<<<< HEAD
             $stmt = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id)');
+=======
+            $stmt = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id, is_admin) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id, :is_admin)');
+>>>>>>> aa7c750fb9a7eec7bd9bafb37a16d33ec39e4e38
             $stmt->bindValue(':username', $username, SQLITE3_TEXT);
             $stmt->bindValue(':pass', password_hash($pass, PASSWORD_DEFAULT), SQLITE3_TEXT); // Хэшируем пароль
             $stmt->bindValue(':surname', $surname, SQLITE3_TEXT);
