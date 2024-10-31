@@ -77,7 +77,7 @@ function displayUsers(data, page) {
     let table = document.createElement('table');
     let headerRow = document.createElement('tr');
 
-    ['Username', 'Password', 'Surname', 'Name', 'Lastname', 'Unit', 'Actions'].forEach(headerText => {
+    ['Username', 'Пароль', 'Фамилия', 'Имя', 'Отчество', 'Подразделение', 'Роль','Действия'].forEach(headerText => {
         let header = document.createElement('th');
         header.textContent = headerText;
         headerRow.appendChild(header);
@@ -92,7 +92,7 @@ function displayUsers(data, page) {
     paginatedData.forEach(user => {
         let row = document.createElement('tr');
 
-        ['username', 'pass', 'surname', 'name', 'lastname', 'unit'].forEach(key => {
+        ['username', 'pass', 'surname', 'name', 'lastname', 'unit', 'role_id'].forEach(key => {
             let cell = document.createElement('td');
             cell.textContent = user[key];
             row.appendChild(cell);
@@ -115,92 +115,103 @@ function displayUsers(data, page) {
 }
 
 function displaySettings(data, page) {
-    const userInfoDiv = document.getElementById('user-settings-container');
-    userInfoDiv.innerHTML = ''; // Очистить предыдущие данные
+ // Очищаем и создаем контейнер для данных
+ const userInfoDiv = document.getElementById('user-settings-container');
+userInfoDiv.innerHTML = ''; // Очистить предыдущие данные
 
-    let table = document.createElement('table');
-    let headerRow = document.createElement('tr');
+let table = document.createElement('table');
+let headerRow = document.createElement('tr');
 
-    ['Роль', 'Фамилия', 'Имя', 'Отчество', 'Подразделение', 'Пароль', 'Действия'].forEach(headerText => {
-        let header = document.createElement('th');
-        header.textContent = headerText;
-        headerRow.appendChild(header);
+// Заголовки таблицы
+['Username', 'Фамилия', 'Имя', 'Отчество', 'Подразделение', 'Роль', 'Действия'].forEach(headerText => {
+    let header = document.createElement('th');
+    header.textContent = headerText;
+    headerRow.appendChild(header);
+});
+
+table.appendChild(headerRow);
+
+const startIndex = (page - 1) * rowsPerPage;
+const endIndex = page * rowsPerPage;
+const paginatedData = data.slice(startIndex, endIndex);
+
+paginatedData.forEach(user => {
+    // Проверяем, если роль пользователя — администратор (role_id = 2), пропускаем его
+    if (user['role_id'] == 2) {
+        return; // Пропустить текущего пользователя
+    }
+
+    let row = document.createElement('tr');
+
+    // Отображение основных полей пользователя
+    ['username', 'surname', 'name', 'lastname', 'unit'].forEach(key => {
+        let cell = document.createElement('td');
+        let input = document.createElement('input');
+        input.type = 'text';
+        input.value = user[key];
+        input.dataset.key = key;
+        cell.appendChild(input);
+        row.appendChild(cell);
     });
 
-    table.appendChild(headerRow);
+    // Отображение роли с выпадающим списком
+    let roleCell = document.createElement('td');
+    let roleSelect = document.createElement('select');
+    roleSelect.dataset.key = 'role_id';
 
-    const startIndex = (page - 1) * rowsPerPage;
-    const endIndex = page * rowsPerPage;
-    const paginatedData = data.slice(startIndex, endIndex);
+    let options = [
+        { value: '1', text: 'Начальник' },
+        { value: '3', text: 'Работник' }
+    ];
 
-    paginatedData.forEach(user => {
-        let row = document.createElement('tr');
-
-        // Отображаем основные поля пользователя
-        ['username', 'surname', 'name', 'lastname', 'unit'].forEach(key => {
-            let cell = document.createElement('td');
-            let input = document.createElement('input');
-            input.type = 'text';
-            input.value = user[key];
-            input.dataset.key = key;
-            cell.appendChild(input);
-            row.appendChild(cell);
-        });
-
-        // Отображение роли с выпадающим списком
-        let roleCell = document.createElement('td');
-        let roleSelect = document.createElement('select');
-        roleSelect.dataset.key = 'role_id';
-
-        let options = [
-            { value: '1', text: 'Head' },
-            { value: '2', text: 'User' }
-        ];
-
-        options.forEach(optionData => {
-            let option = document.createElement('option');
-            option.value = optionData.value;
-            option.textContent = optionData.text;
-            if (user['role_id'] == optionData.value) {
-                option.selected = true;
-            }
-            roleSelect.appendChild(option);
-        });
-
-        // Добавляем кнопку сброса пароля
-        let passwordResetCell = document.createElement('td');
-        let resetButton = document.createElement('button');
-        resetButton.textContent = 'Сброс пароля';
-        resetButton.addEventListener('click', function() {
-            resetPassword(user.user_id);
-        });
-        passwordResetCell.appendChild(resetButton);
-        row.appendChild(passwordResetCell);
-
-        let actionsCell = document.createElement('td');
-        
-        // Кнопка "Save"
-        let saveButton = document.createElement('button');
-        saveButton.textContent = 'Сохранить';
-        saveButton.addEventListener('click', function() {
-            saveUser(row, user.user_id);
-        });
-        actionsCell.appendChild(saveButton);
-
-        // Кнопка "Delete"
-        let deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Удалить';
-        deleteButton.addEventListener('click', function() {
-            deleteUser(user.user_id, user.username);
-        });
-        actionsCell.appendChild(deleteButton);
-
-        row.appendChild(actionsCell);
-        table.appendChild(row);
+    options.forEach(optionData => {
+        let option = document.createElement('option');
+        option.value = optionData.value;
+        option.textContent = optionData.text;
+        if (user['role_id'] == optionData.value) {
+            option.selected = true;
+        }
+        roleSelect.appendChild(option);
     });
 
-    userInfoDiv.appendChild(table);
-    setupPagination(data.length, page, fetchUsers, true);
+    roleCell.appendChild(roleSelect);
+    row.appendChild(roleCell);
+
+    // Создаем ячейку с действиями
+    let actionsCell = document.createElement('td');
+
+    // Кнопка "Сброс пароля"
+    let resetButton = document.createElement('button');
+    resetButton.textContent = 'Сброс пароля';
+    resetButton.addEventListener('click', function() {
+        resetPassword(user.user_id);
+    });
+    actionsCell.appendChild(resetButton);
+
+    // Кнопка "Сохранить"
+    let saveButton = document.createElement('button');
+    saveButton.textContent = 'Сохранить';
+    saveButton.addEventListener('click', function() {
+        saveUser(row, user.user_id);
+    });
+    actionsCell.appendChild(saveButton);
+
+    // Кнопка "Удалить"
+    let deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Удалить';
+    deleteButton.addEventListener('click', function() {
+        deleteUser(user.user_id, user.username);
+    });
+    actionsCell.appendChild(deleteButton);
+
+    row.appendChild(actionsCell);
+    table.appendChild(row);
+});
+
+// Добавляем таблицу в контейнер
+userInfoDiv.appendChild(table);
+setupPagination(data.length, page, fetchUsers, true);
+
 }
 
 
@@ -264,13 +275,22 @@ function displayAddUserForm() {
 
     let form = document.createElement('form');
 
-    ['username', 'pass', 'surname', 'name', 'lastname', 'unit'].forEach(field => {
+    const fields = [
+        { label: 'Username', name: 'username', type: 'text' },
+        { label: 'Пароль', name: 'pass', type: 'password' },
+        { label: 'Фамилия', name: 'surname', type: 'text' },
+        { label: 'Имя', name: 'name', type: 'text' },
+        { label: 'Отчество', name: 'lastname', type: 'text' },
+        { label: 'Подразделение', name: 'unit', type: 'text' }
+    ];
+
+    fields.forEach(field => {
         let label = document.createElement('label');
-        label.textContent = field.charAt(0).toUpperCase() + field.slice(1);
+        label.textContent = field.label;
         let input = document.createElement('input');
-        input.type = 'text';
-        input.id = field;
-        input.name = field;
+        input.type = field.type;
+        input.name = field.name;
+        input.id = field.name;
         label.appendChild(input);
         form.appendChild(label);
         form.appendChild(document.createElement('br'));
@@ -278,14 +298,14 @@ function displayAddUserForm() {
 
     // Выбор роли
     let roleLabel = document.createElement('label');
-    roleLabel.textContent = 'Role';
+    roleLabel.textContent = 'Роль';
     let roleSelect = document.createElement('select');
     roleSelect.id = 'role_id';
     roleSelect.name = 'role_id';
 
     let roles = {
-        '1': 'Head',
-        '2': 'User'
+        '1': 'Начальник',
+        '2': 'Работник'
     };
 
     for (let value in roles) {
@@ -310,6 +330,35 @@ function displayAddUserForm() {
 
     userInfoDiv.appendChild(form);
 }
+
+function addUser() {
+    const formData = new FormData();
+    formData.append('action', 'add_user');  // Добавляем действие
+    formData.append('username', document.getElementById('username').value);
+    formData.append('pass', document.getElementById('pass').value);
+    formData.append('surname', document.getElementById('surname').value);
+    formData.append('name', document.getElementById('name').value);
+    formData.append('lastname', document.getElementById('lastname').value);
+    formData.append('unit', document.getElementById('unit').value);
+    formData.append('role_id', document.getElementById('role_id').value);
+
+    fetch('index.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Пользователь успешно добавлен');
+        } else {
+            alert('Ошибка: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка при добавлении пользователя:', error);
+    });
+}
+
 
 
 function displayGeneralSettings() {

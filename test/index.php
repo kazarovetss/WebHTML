@@ -97,20 +97,21 @@ function _generateMonthsHtml($db, $userId) {
 function displayUserPage($db, $role, $isAdmin, $userId) {
     $header = _loadHtmlTemplate("html/header.html");
     $surname = _getSurNameFromDB($db, $userId);
-    $user_info = "<div>Добро пожаловать, " . htmlspecialchars($surname) . "!</div>";
-    $header = str_replace("{LOGIN-INFO}", $user_info, $header);
 
-    $monthsHtml = _generateMonthsHtml($db, $userId);
-
-    $bodyFile = "html/body-employee.html";
-    if ($role == 2) {
+    if ($role == 2) { // Если роль администратора
+        $user_info = "<div>Добро пожаловать, admin!</div>";
         $bodyFile = "html/admin.html"; // Приоритет для администратора
-    } elseif ($role == 1) {
-        $bodyFile = "html/body-head.html"; // Вторая проверка на руководителя
+    } else {
+        $user_info = "<div>Добро пожаловать, " . htmlspecialchars($surname) . "!</div>";
+        if ($role == 1) {
+            $bodyFile = "html/body-head.html"; // Вторая проверка на руководителя
+        } else {
+            $bodyFile = "html/body-employee.html";
+        }
     }
 
-
-
+    $header = str_replace("{LOGIN-INFO}", $user_info, $header);
+    $monthsHtml = _generateMonthsHtml($db, $userId);
     $body = _loadHtmlTemplate($bodyFile);
     $body = str_replace("{DATE}", $monthsHtml, $body);
 
@@ -186,30 +187,42 @@ try {
         }
 
         if ($action === 'add_user') {
-            $username = isset($_POST['username']) ? $_POST['username'] : '';
-            $pass = isset($_POST['pass']) ? $_POST['pass'] : '';
-            $surname = isset($_POST['surname']) ? $_POST['surname'] : '';
-            $name = isset($_POST['name']) ? $_POST['name'] : '';
-            $lastname = isset($_POST['lastname']) ? $_POST['lastname'] : '';
-            $unit = isset($_POST['unit']) ? $_POST['unit'] : '';
-            $roleId = isset($_POST['role_id']) ? $_POST['role_id'] : '';
-
-            $stmt = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id)');
-            $stmt->bindValue(':username', $username, SQLITE3_TEXT);
-            $stmt->bindValue(':pass', password_hash($pass, PASSWORD_DEFAULT), SQLITE3_TEXT); // Хэшируем пароль
-            $stmt->bindValue(':surname', $surname, SQLITE3_TEXT);
-            $stmt->bindValue(':name', $name, SQLITE3_TEXT);
-            $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
-            $stmt->bindValue(':unit', $unit, SQLITE3_TEXT);
-            $stmt->bindValue(':role_id', $roleId, SQLITE3_INTEGER);
-
-            if ($stmt->execute()) {
-                echo json_encode(array('status' => 'success'));
-            } else {
-                echo json_encode(array('status' => 'error', 'message' => 'Failed to execute statement'));
+            $username = isset($_POST['username']) ? trim($_POST['username']) : '';
+            $pass = isset($_POST['pass']) ? trim($_POST['pass']) : '';
+            $surname = isset($_POST['surname']) ? trim($_POST['surname']) : '';
+            $name = isset($_POST['name']) ? trim($_POST['name']) : '';
+            $lastname = isset($_POST['lastname']) ? trim($_POST['lastname']) : '';
+            $unit = isset($_POST['unit']) ? trim($_POST['unit']) : '';
+            $roleId = isset($_POST['role_id']) ? (int)$_POST['role_id'] : 0;
+        
+            if (empty($username) || empty($pass) || empty($surname) || empty($name) || $roleId === 0) {
+                echo json_encode(array('status' => 'error', 'message' => 'Missing required fields'));
+                exit();
+            }
+        
+            try {
+                $stmt = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id)');
+                $stmt->bindValue(':username', $username, SQLITE3_TEXT);
+                $stmt->bindValue(':pass', password_hash($pass, PASSWORD_DEFAULT), SQLITE3_TEXT);
+                $stmt->bindValue(':surname', $surname, SQLITE3_TEXT);
+                $stmt->bindValue(':name', $name, SQLITE3_TEXT);
+                $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
+                $stmt->bindValue(':unit', $unit, SQLITE3_TEXT);
+                $stmt->bindValue(':role_id', $roleId, SQLITE3_INTEGER);
+        
+                if ($stmt->execute()) {
+                    echo json_encode(array('status' => 'success'));
+                } else {
+                    throw new Exception($db->lastErrorMsg());
+                }
+            } catch (Exception $e) {
+                error_log('Ошибка добавления пользователя: ' . $e->getMessage());
+                echo json_encode(array('status' => 'error', 'message' => $e->getMessage()));
             }
             exit();
         }
+        
+        
 
         if ($action === 'delete_user') {
             $userId = isset($_POST['user_id']) ? $_POST['user_id'] : '';
@@ -268,9 +281,9 @@ try {
     )");
 
     // Добавление пользователей с булевым признаком is_admin
-    $names = array('head','user');
-$checkRole = $db->prepare('SELECT COUNT(*) AS count FROM roles WHERE name = :name');
-$stmtRole = $db->prepare('INSERT INTO roles (name) VALUES (:name)');
+    $names = array('Начальник','Работник');
+    $checkRole = $db->prepare('SELECT COUNT(*) AS count FROM roles WHERE name = :name');
+    $stmtRole = $db->prepare('INSERT INTO roles (name) VALUES (:name)');
 
 foreach ($names as $name) {
     $checkRole->bindValue(':name', $name, SQLITE3_TEXT);
