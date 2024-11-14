@@ -77,7 +77,7 @@ function displayUsers(data, page) {
     let table = document.createElement('table');
     let headerRow = document.createElement('tr');
 
-    ['Username', 'Пароль', 'Фамилия', 'Имя', 'Отчество', 'Подразделение', 'Роль','Действия'].forEach(headerText => {
+    ['Пользователь', 'Пароль', 'Фамилия', 'Имя', 'Отчество', 'Список подчиненных подразделений', 'Роль','Действия'].forEach(headerText => {
         let header = document.createElement('th');
         header.textContent = headerText;
         headerRow.appendChild(header);
@@ -123,7 +123,7 @@ let table = document.createElement('table');
 let headerRow = document.createElement('tr');
 
 // Заголовки таблицы
-['Username', 'Фамилия', 'Имя', 'Отчество', 'Подразделение', 'Роль', 'Действия'].forEach(headerText => {
+['Пользователь', 'Фамилия', 'Имя', 'Отчество', 'Список подчиненных подразделений', 'Роль', 'Действия'].forEach(headerText => {
     let header = document.createElement('th');
     header.textContent = headerText;
     headerRow.appendChild(header);
@@ -276,12 +276,12 @@ function displayAddUserForm() {
     let form = document.createElement('form');
 
     const fields = [
-        { label: 'Username', name: 'username', type: 'text' },
+        { label: 'Пользователь', name: 'username', type: 'text' },
         { label: 'Пароль', name: 'pass', type: 'password' },
         { label: 'Фамилия', name: 'surname', type: 'text' },
         { label: 'Имя', name: 'name', type: 'text' },
         { label: 'Отчество', name: 'lastname', type: 'text' },
-        { label: 'Подразделение', name: 'unit', type: 'text' }
+        { label: 'Список подчиненных подразделений', name: 'unit', type: 'text' }
     ];
 
     fields.forEach(field => {
@@ -332,14 +332,19 @@ function displayAddUserForm() {
 }
 
 function addUser() {
-    const formData = new FormData();
+    const formData = new URLSearchParams();
     formData.append('action', 'add_user');  // Добавляем действие
     formData.append('username', document.getElementById('username').value);
     formData.append('pass', document.getElementById('pass').value);
     formData.append('surname', document.getElementById('surname').value);
     formData.append('name', document.getElementById('name').value);
     formData.append('lastname', document.getElementById('lastname').value);
-    formData.append('unit', document.getElementById('unit').value);
+
+    // Обработка поля unit для подчиненных подразделений
+    const unitInput = document.getElementById('unit').value;
+    const unitArray = unitInput.split(',').map(unit => unit.trim());
+    formData.append('unit', JSON.stringify(unitArray));
+
     formData.append('role_id', document.getElementById('role_id').value);
 
     fetch('index.php', {
@@ -458,7 +463,11 @@ function saveUser(row, userId) {
 
     inputs.forEach(input => {
         if (input.type === 'checkbox') {
-            userData[input.dataset.key] = input.checked ? 1 : 0; // Для чекбокса is_admin
+            userData[input.dataset.key] = input.checked ? 1 : 0;
+        } else if (input.dataset.key === 'unit') {
+            // Обработка поля unit для подчиненных подразделений
+            const unitArray = input.value.split(',').map(unit => unit.trim());
+            userData[input.dataset.key] = JSON.stringify(unitArray);
         } else {
             userData[input.dataset.key] = input.value;
         }

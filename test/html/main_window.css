@@ -1,18 +1,8 @@
-﻿body {
-    font-family: Arial, sans-serif;
-    background-color: #808080;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    height: 100vh;
-    box-sizing: border-box;
-}
-
-/* Стили для header */
+﻿/* Стили для header */
 header {
+    position: fixed;
+    top: 0;
+    left: 0;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -22,6 +12,22 @@ header {
     width: 100%;
     box-sizing: border-box;
 }
+
+/* Стили для body */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #808080;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    flex-direction: column;
+    height: 100vh;
+    box-sizing: border-box;
+    padding-top: 50px; 
+}
+
 
 .logo-container {
     width: 150px;

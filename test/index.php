@@ -164,20 +164,21 @@ try {
             $surname = isset($_POST['surname']) ? $_POST['surname'] : '';
             $name = isset($_POST['name']) ? $_POST['name'] : '';
             $lastname = isset($_POST['lastname']) ? $_POST['lastname'] : '';
-            $unit = isset($_POST['unit']) ? $_POST['unit'] : '';
+            
+            // Преобразование поля unit в JSON-строку массива
+            $unit = isset($_POST['unit']) ? json_encode(array_map('trim', explode(',', $_POST['unit']))) : '[]';
             $roleId = isset($_POST['role_id']) ? $_POST['role_id'] : '';
-
-            $stmt = $db->prepare('UPDATE users SET username = :username, pass = :pass, surname = :surname, name = :name, lastname = :lastname, unit = :unit, role_id = :role_id, is_admin = :is_admin WHERE user_id = :user_id');
+        
+            $stmt = $db->prepare('UPDATE users SET username = :username, pass = :pass, surname = :surname, name = :name, lastname = :lastname, unit = :unit, role_id = :role_id WHERE user_id = :user_id');
             $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
             $stmt->bindValue(':username', $username, SQLITE3_TEXT);
             $stmt->bindValue(':pass', password_hash($pass, PASSWORD_DEFAULT), SQLITE3_TEXT);
             $stmt->bindValue(':surname', $surname, SQLITE3_TEXT);
             $stmt->bindValue(':name', $name, SQLITE3_TEXT);
             $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
-            $stmt->bindValue(':unit', $unit, SQLITE3_TEXT); 
+            $stmt->bindValue(':unit', $unit, SQLITE3_TEXT); // Сохраняем список подразделений как JSON-строку
             $stmt->bindValue(':role_id', $roleId, SQLITE3_INTEGER);
         
-
             if ($stmt->execute()) {
                 echo json_encode(array('status' => 'success'));
             } else {
@@ -185,6 +186,7 @@ try {
             }
             exit();
         }
+        
 
         if ($action === 'add_user') {
             $username = isset($_POST['username']) ? trim($_POST['username']) : '';
@@ -192,7 +194,9 @@ try {
             $surname = isset($_POST['surname']) ? trim($_POST['surname']) : '';
             $name = isset($_POST['name']) ? trim($_POST['name']) : '';
             $lastname = isset($_POST['lastname']) ? trim($_POST['lastname']) : '';
-            $unit = isset($_POST['unit']) ? trim($_POST['unit']) : '';
+            
+            // Преобразование поля unit в JSON-строку массива
+            $unit = isset($_POST['unit']) ? json_encode(array_map('trim', explode(',', $_POST['unit']))) : '[]';
             $roleId = isset($_POST['role_id']) ? (int)$_POST['role_id'] : 0;
         
             if (empty($username) || empty($pass) || empty($surname) || empty($name) || $roleId === 0) {
@@ -207,7 +211,7 @@ try {
                 $stmt->bindValue(':surname', $surname, SQLITE3_TEXT);
                 $stmt->bindValue(':name', $name, SQLITE3_TEXT);
                 $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
-                $stmt->bindValue(':unit', $unit, SQLITE3_TEXT);
+                $stmt->bindValue(':unit', $unit, SQLITE3_TEXT); // Сохраняем список подразделений как JSON-строку
                 $stmt->bindValue(':role_id', $roleId, SQLITE3_INTEGER);
         
                 if ($stmt->execute()) {
