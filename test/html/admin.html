@@ -137,9 +137,9 @@ function displaySettings(data, page) {
     const paginatedData = data.slice(startIndex, endIndex);
 
     paginatedData.forEach(user => {
-        if (user['role_id'] == 2) {
-            return; // Пропустить текущего пользователя
-        }
+        // if (user['role_id'] == 2) {
+        //     return; // Пропустить текущего пользователя
+        // }
 
         let row = document.createElement('tr');
 
@@ -162,18 +162,20 @@ function displaySettings(data, page) {
 
         let options = [
             { value: '1', text: 'Начальник' },
-            { value: '3', text: 'Работник' }
+            { value: '2', text: 'Работник' }
         ];
 
         options.forEach(optionData => {
-            let option = document.createElement('option');
-            option.value = optionData.value;
-            option.textContent = optionData.text;
-            if (user['role_id'] == optionData.value) {
-                option.selected = true;
-            }
-            roleSelect.appendChild(option);
-        });
+    let option = document.createElement('option');
+    option.value = optionData.value;
+    option.textContent = optionData.text;
+
+    // Если роль пользователя соответствует значению опции, установим ее как выбранную
+    if (parseInt(user['role_id']) === parseInt(optionData.value)) {
+        option.selected = true;
+    }
+    roleSelect.appendChild(option);
+});
 
         roleCell.appendChild(roleSelect);
         row.appendChild(roleCell);
