@@ -166,7 +166,7 @@ try {
             $lastname = isset($_POST['lastname']) ? $_POST['lastname'] : '';
             
             // Преобразование поля unit в JSON-строку массива
-            $unit = isset($_POST['unit']) ? json_encode(array_map('trim', explode(',', $_POST['unit']))) : '[]';
+            $unit = isset($_POST['unit']) ? implode(', ', array_map('trim', explode(',', $_POST['unit']))) : '';
             $roleId = isset($_POST['role_id']) ? $_POST['role_id'] : '';
         
             $stmt = $db->prepare('UPDATE users SET username = :username, pass = :pass, surname = :surname, name = :name, lastname = :lastname, unit = :unit, role_id = :role_id WHERE user_id = :user_id');
@@ -196,7 +196,7 @@ try {
             $lastname = isset($_POST['lastname']) ? trim($_POST['lastname']) : '';
             
             // Преобразование поля unit в JSON-строку массива
-            $unit = isset($_POST['unit']) ? json_encode(array_map('trim', explode(',', $_POST['unit']))) : '[]';
+            $unit = isset($_POST['unit']) ? implode(', ', array_map('trim', explode(',', $_POST['unit']))) : '';
             $roleId = isset($_POST['role_id']) ? (int)$_POST['role_id'] : 0;
         
             if (empty($username) || empty($pass) || empty($surname) || empty($name) || $roleId === 0) {

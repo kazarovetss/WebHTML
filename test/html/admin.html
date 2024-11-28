@@ -342,8 +342,8 @@ function addUser() {
 
     // Обработка поля unit для подчиненных подразделений
     const unitInput = document.getElementById('unit').value;
-    const unitArray = unitInput.split(',').map(unit => unit.trim());
-    formData.append('unit', JSON.stringify(unitArray));
+    formData.append('unit', unitInput);
+
 
     formData.append('role_id', document.getElementById('role_id').value);
 
@@ -412,47 +412,47 @@ function saveGeneralSettings() {
     alert('Настройки сохранены');
 }
 
-function addUser() {
-    let formData = new URLSearchParams();
-    formData.append('action', 'add_user');
+// function addUser() {
+//     let formData = new URLSearchParams();
+//     formData.append('action', 'add_user');
     
-    // Поля, которые будут передаваться
-    const fields = ['username', 'pass', 'surname', 'name', 'lastname', 'unit'];
+//     // Поля, которые будут передаваться
+//     const fields = ['username', 'pass', 'surname', 'name', 'lastname', 'unit'];
 
-    // Добавляем значения этих полей
-    fields.forEach(field => {
-        formData.append(field, document.getElementById(field).value);
-    });
+//     // Добавляем значения этих полей
+//     fields.forEach(field => {
+//         formData.append(field, document.getElementById(field).value);
+//     });
 
-    // Устанавливаем флаг is_admin для роли Head как 0 по дефолту
-    let roleValue = document.getElementById('role_id').value;
-    let isAdmin = (roleValue == '1') ? 0 : 0; 
-    formData.append('is_admin', isAdmin);
+//     // Устанавливаем флаг is_admin для роли Head как 0 по дефолту
+//     let roleValue = document.getElementById('role_id').value;
+//     let isAdmin = (roleValue == '1') ? 0 : 0; 
+//     formData.append('is_admin', isAdmin);
 
-    fetch('index.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            alert('Пользователь успешно добавлен');
-            // Очистить поля после добавления
-            fields.forEach(field => {
-                document.getElementById(field).value = '';
-            });
-        } else {
-            alert('Ошибка добавления пользователя');
-        }
-    })
-    .catch(error => {
-        console.error('Произошла ошибка при отправке запроса:', error);
-        alert('Произошла ошибка при добавлении пользователя');
-    });
-}
+//     fetch('index.php', {
+//         method: 'POST',
+//         headers: {
+//             'Content-Type': 'application/x-www-form-urlencoded',
+//         },
+//         body: formData
+//     })
+//     .then(response => response.json())
+//     .then(data => {
+//         if (data.status === 'success') {
+//             alert('Пользователь успешно добавлен');
+//             // Очистить поля после добавления
+//             fields.forEach(field => {
+//                 document.getElementById(field).value = '';
+//             });
+//         } else {
+//             alert('Ошибка добавления пользователя');
+//         }
+//     })
+//     .catch(error => {
+//         console.error('Произошла ошибка при отправке запроса:', error);
+//         alert('Произошла ошибка при добавлении пользователя');
+//     });
+// }
 
 function saveUser(row, userId) {
     let inputs = row.querySelectorAll('input, select');

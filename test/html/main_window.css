@@ -68,7 +68,7 @@ a:hover {
 main {
     width: 90vw; 
     height: auto; 
-    min-height: 90vh; 
+    /*min-height: 200vh;*/
     background-color: #f0f0f0;
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
