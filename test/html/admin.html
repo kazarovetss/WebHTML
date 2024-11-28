@@ -96,7 +96,7 @@ function displayUsers(data, page) {
         ['username', 'pass', 'surname', 'name', 'lastname', 'unit', 'role_id'].forEach(key => {
             let cell = document.createElement('td');
             // Если значение ячейки null или пустая строка, выводим 'пусто'
-            cell.textContent = user[key] !== null && user[key] !== "" ? user[key] : 'пусто';
+            cell.textContent = (user[key] === null || user[key] === "") ? 'пусто' : user[key];
             row.appendChild(cell);
         });
 
@@ -117,103 +117,101 @@ function displayUsers(data, page) {
 }
 
 function displaySettings(data, page) {
- // Очищаем и создаем контейнер для данных
- const userInfoDiv = document.getElementById('user-settings-container');
-userInfoDiv.innerHTML = ''; // Очистить предыдущие данные
+    const userInfoDiv = document.getElementById('user-settings-container');
+    userInfoDiv.innerHTML = ''; // Очистить предыдущие данные
 
-let table = document.createElement('table');
-let headerRow = document.createElement('tr');
+    let table = document.createElement('table');
+    let headerRow = document.createElement('tr');
 
-// Заголовки таблицы
-['Пользователь', 'Фамилия', 'Имя', 'Отчество', 'Список подчиненных подразделений', 'Роль', 'Действия'].forEach(headerText => {
-    let header = document.createElement('th');
-    header.textContent = headerText;
-    headerRow.appendChild(header);
-});
-
-table.appendChild(headerRow);
-
-const startIndex = (page - 1) * rowsPerPage;
-const endIndex = page * rowsPerPage;
-const paginatedData = data.slice(startIndex, endIndex);
-
-paginatedData.forEach(user => {
-    // Проверяем, если роль пользователя — администратор (role_id = 2), пропускаем его
-    if (user['role_id'] == 2) {
-        return; // Пропустить текущего пользователя
-    }
-
-    let row = document.createElement('tr');
-
-    // Отображение основных полей пользователя
-    ['username', 'surname', 'name', 'lastname', 'unit'].forEach(key => {
-        let cell = document.createElement('td');
-        let input = document.createElement('input');
-        input.type = 'text';
-        input.value = user[key];
-        input.dataset.key = key;
-        cell.appendChild(input);
-        row.appendChild(cell);
+    // Заголовки таблицы
+    ['Пользователь', 'Фамилия', 'Имя', 'Отчество', 'Список подчиненных подразделений', 'Роль', 'Действия'].forEach(headerText => {
+        let header = document.createElement('th');
+        header.textContent = headerText;
+        headerRow.appendChild(header);
     });
 
-    // Отображение роли с выпадающим списком
-    let roleCell = document.createElement('td');
-    let roleSelect = document.createElement('select');
-    roleSelect.dataset.key = 'role_id';
+    table.appendChild(headerRow);
 
-    let options = [
-        { value: '1', text: 'Начальник' },
-        { value: '3', text: 'Работник' }
-    ];
+    const startIndex = (page - 1) * rowsPerPage;
+    const endIndex = page * rowsPerPage;
+    const paginatedData = data.slice(startIndex, endIndex);
 
-    options.forEach(optionData => {
-        let option = document.createElement('option');
-        option.value = optionData.value;
-        option.textContent = optionData.text;
-        if (user['role_id'] == optionData.value) {
-            option.selected = true;
+    paginatedData.forEach(user => {
+        if (user['role_id'] == 2) {
+            return; // Пропустить текущего пользователя
         }
-        roleSelect.appendChild(option);
+
+        let row = document.createElement('tr');
+
+        // Отображение основных полей пользователя
+        ['username', 'surname', 'name', 'lastname', 'unit'].forEach(key => {
+            let cell = document.createElement('td');
+            let input = document.createElement('input');
+            input.type = 'text';
+            // Если значение null или пустое, отображаем "пусто"
+            input.value = (user[key] === null || user[key] === "") ? 'пусто' : user[key];
+            input.dataset.key = key;
+            cell.appendChild(input);
+            row.appendChild(cell);
+        });
+
+        // Отображение роли с выпадающим списком
+        let roleCell = document.createElement('td');
+        let roleSelect = document.createElement('select');
+        roleSelect.dataset.key = 'role_id';
+
+        let options = [
+            { value: '1', text: 'Начальник' },
+            { value: '3', text: 'Работник' }
+        ];
+
+        options.forEach(optionData => {
+            let option = document.createElement('option');
+            option.value = optionData.value;
+            option.textContent = optionData.text;
+            if (user['role_id'] == optionData.value) {
+                option.selected = true;
+            }
+            roleSelect.appendChild(option);
+        });
+
+        roleCell.appendChild(roleSelect);
+        row.appendChild(roleCell);
+
+        // Создаем ячейку с действиями
+        let actionsCell = document.createElement('td');
+
+        // Кнопка "Сброс пароля"
+        let resetButton = document.createElement('button');
+        resetButton.textContent = 'Сброс пароля';
+        resetButton.addEventListener('click', function() {
+            resetPassword(user.user_id);
+        });
+        actionsCell.appendChild(resetButton);
+
+        // Кнопка "Сохранить"
+        let saveButton = document.createElement('button');
+        saveButton.textContent = 'Сохранить';
+        saveButton.addEventListener('click', function() {
+            saveUser(row, user.user_id);
+        });
+        actionsCell.appendChild(saveButton);
+
+        // Кнопка "Удалить"
+        let deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Удалить';
+        deleteButton.addEventListener('click', function() {
+            deleteUser(user.user_id, user.username);
+        });
+        actionsCell.appendChild(deleteButton);
+
+        row.appendChild(actionsCell);
+        table.appendChild(row);
     });
 
-    roleCell.appendChild(roleSelect);
-    row.appendChild(roleCell);
-
-    // Создаем ячейку с действиями
-    let actionsCell = document.createElement('td');
-
-    // Кнопка "Сброс пароля"
-    let resetButton = document.createElement('button');
-    resetButton.textContent = 'Сброс пароля';
-    resetButton.addEventListener('click', function() {
-        resetPassword(user.user_id);
-    });
-    actionsCell.appendChild(resetButton);
-
-    // Кнопка "Сохранить"
-    let saveButton = document.createElement('button');
-    saveButton.textContent = 'Сохранить';
-    saveButton.addEventListener('click', function() {
-        saveUser(row, user.user_id);
-    });
-    actionsCell.appendChild(saveButton);
-
-    // Кнопка "Удалить"
-    let deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Удалить';
-    deleteButton.addEventListener('click', function() {
-        deleteUser(user.user_id, user.username);
-    });
-    actionsCell.appendChild(deleteButton);
-
-    row.appendChild(actionsCell);
-    table.appendChild(row);
-});
-
-// Добавляем таблицу в контейнер
-userInfoDiv.appendChild(table);
-setupPagination(data.length, page, fetchUsers, true);
-
+    // Добавляем таблицу в контейнер
+    userInfoDiv.appendChild(table);
+    setupPagination(data.length, page, fetchUsers, true);
 }
 
 
