@@ -62,12 +62,13 @@ function fetchUsers(page, isSettings = false) {
     })
     .then(response => response.json())
     .then(data => {
-        if (isSettings) {
-            displaySettings(data, page);
-        } else {
-            displayUsers(data, page);
-        }
-    });
+    console.log(data); // Проверяем, включены ли пользователи с unit = null
+    if (isSettings) {
+        displaySettings(data, page);
+    } else {
+        displayUsers(data, page);
+    }
+});
 }
 
 function displayUsers(data, page) {
@@ -77,7 +78,7 @@ function displayUsers(data, page) {
     let table = document.createElement('table');
     let headerRow = document.createElement('tr');
 
-    ['Пользователь', 'Пароль', 'Фамилия', 'Имя', 'Отчество', 'Список подчиненных подразделений', 'Роль','Действия'].forEach(headerText => {
+    ['Пользователь', 'Пароль', 'Фамилия', 'Имя', 'Отчество', 'Список подчиненных подразделений', 'Роль', 'Действия'].forEach(headerText => {
         let header = document.createElement('th');
         header.textContent = headerText;
         headerRow.appendChild(header);
@@ -94,7 +95,8 @@ function displayUsers(data, page) {
 
         ['username', 'pass', 'surname', 'name', 'lastname', 'unit', 'role_id'].forEach(key => {
             let cell = document.createElement('td');
-            cell.textContent = user[key];
+            // Если значение ячейки null или пустая строка, выводим 'пусто'
+            cell.textContent = user[key] !== null && user[key] !== "" ? user[key] : 'пусто';
             row.appendChild(cell);
         });
 
@@ -281,7 +283,6 @@ function displayAddUserForm() {
         { label: 'Фамилия', name: 'surname', type: 'text' },
         { label: 'Имя', name: 'name', type: 'text' },
         { label: 'Отчество', name: 'lastname', type: 'text' },
-        { label: 'Список подчиненных подразделений', name: 'unit', type: 'text' }
     ];
 
     fields.forEach(field => {
@@ -295,6 +296,18 @@ function displayAddUserForm() {
         form.appendChild(label);
         form.appendChild(document.createElement('br'));
     });
+
+    // Поле для ввода подразделений
+    let unitLabel = document.createElement('label');
+    unitLabel.textContent = 'Список подчиненных подразделений';
+    let unitInput = document.createElement('input');
+    unitInput.type = 'text';
+    unitInput.name = 'unit';
+    unitInput.id = 'unit';
+    unitInput.disabled = true; // По умолчанию отключаем
+    unitLabel.appendChild(unitInput);
+    form.appendChild(unitLabel);
+    form.appendChild(document.createElement('br'));
 
     // Выбор роли
     let roleLabel = document.createElement('label');
@@ -315,6 +328,17 @@ function displayAddUserForm() {
         roleSelect.appendChild(option);
     }
 
+    roleSelect.addEventListener('change', function() {
+        if (this.value === '1') { // Проверка роли "Начальник" (role_id = 1)
+            unitInput.disabled = false;
+            unitInput.placeholder = 'Введите список подчиненных подразделений';
+        } else {
+            unitInput.disabled = true;
+            unitInput.value = ''; // Очистить поле
+            unitInput.placeholder = 'Поле недоступно';
+        }
+    });
+
     roleLabel.appendChild(roleSelect);
     form.appendChild(roleLabel);
     form.appendChild(document.createElement('br'));
@@ -333,7 +357,7 @@ function displayAddUserForm() {
 
 function addUser() {
     const formData = new URLSearchParams();
-    formData.append('action', 'add_user');  // Добавляем действие
+    formData.append('action', 'add_user');
     formData.append('username', document.getElementById('username').value);
     formData.append('pass', document.getElementById('pass').value);
     formData.append('surname', document.getElementById('surname').value);
@@ -341,20 +365,29 @@ function addUser() {
     formData.append('lastname', document.getElementById('lastname').value);
 
     // Обработка поля unit для подчиненных подразделений
-    const unitInput = document.getElementById('unit').value;
-    formData.append('unit', unitInput);
+    const roleValue = document.getElementById('role_id').value;
+    if (roleValue === '1') { // Если роль начальник, добавляем список подразделений
+        const unitInput = document.getElementById('unit').value;
+        const unitArray = unitInput.split(',').map(unit => unit.trim());
+        formData.append('unit', unitArray.join(', '));
+    } else {
+        formData.append('unit', ''); // Устанавливаем пустое значение для обычного пользователя
+    }
 
-
-    formData.append('role_id', document.getElementById('role_id').value);
+    formData.append('role_id', roleValue);
 
     fetch('index.php', {
         method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
         body: formData
     })
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
             alert('Пользователь успешно добавлен');
+            fetchUsers(1, true); // Обновляем список пользователей после добавления
         } else {
             alert('Ошибка: ' + data.message);
         }

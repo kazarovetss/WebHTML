@@ -194,26 +194,32 @@ try {
             $surname = isset($_POST['surname']) ? trim($_POST['surname']) : '';
             $name = isset($_POST['name']) ? trim($_POST['name']) : '';
             $lastname = isset($_POST['lastname']) ? trim($_POST['lastname']) : '';
-            
-            // Преобразование поля unit в JSON-строку массива
-            $unit = isset($_POST['unit']) ? implode(', ', array_map('trim', explode(',', $_POST['unit']))) : '';
             $roleId = isset($_POST['role_id']) ? (int)$_POST['role_id'] : 0;
         
+            // Преобразование поля unit, только если роль - начальник (role_id = 1)
+            $unit = null;
+            if ($roleId === 1) {
+                $unit = isset($_POST['unit']) ? implode(', ', array_map('trim', explode(',', $_POST['unit']))) : '';
+            }
+        
+            // Проверка на обязательные поля
             if (empty($username) || empty($pass) || empty($surname) || empty($name) || $roleId === 0) {
                 echo json_encode(array('status' => 'error', 'message' => 'Missing required fields'));
                 exit();
             }
         
             try {
+                // Подготовка SQL-запроса
                 $stmt = $db->prepare('INSERT INTO users (username, pass, surname, name, lastname, unit, role_id) VALUES (:username, :pass, :surname, :name, :lastname, :unit, :role_id)');
                 $stmt->bindValue(':username', $username, SQLITE3_TEXT);
                 $stmt->bindValue(':pass', password_hash($pass, PASSWORD_DEFAULT), SQLITE3_TEXT);
                 $stmt->bindValue(':surname', $surname, SQLITE3_TEXT);
                 $stmt->bindValue(':name', $name, SQLITE3_TEXT);
                 $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
-                $stmt->bindValue(':unit', $unit, SQLITE3_TEXT); // Сохраняем список подразделений как JSON-строку
+                $stmt->bindValue(':unit', $unit, SQLITE3_TEXT); // Сохраняем подразделения, только если роль - начальник
                 $stmt->bindValue(':role_id', $roleId, SQLITE3_INTEGER);
         
+                // Выполнение SQL-запроса
                 if ($stmt->execute()) {
                     echo json_encode(array('status' => 'success'));
                 } else {
@@ -225,6 +231,7 @@ try {
             }
             exit();
         }
+        
         
         
 
