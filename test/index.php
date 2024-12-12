@@ -48,6 +48,20 @@ function _getAvailableMonths($db, $userId) {
     return $months;
 }
 
+function _getReportsByMonth($db, $userId, $year, $month) {
+    $stmt = $db->prepare('SELECT report_text, send_date FROM reports WHERE user_id = :user_id AND strftime("%Y", send_date) = :year AND strftime("%m", send_date) = :month ORDER BY send_date DESC');
+    $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
+    $stmt->bindValue(':year', $year, SQLITE3_TEXT);
+    $stmt->bindValue(':month', $month, SQLITE3_TEXT);
+    $result = $stmt->execute();
+
+    $reports = array();
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        $reports[] = $row;
+    }
+    return $reports;
+}
+
 function _generateMonthsHtml($db, $userId) {
     $availableMonths = _getAvailableMonths($db, $userId);
     $allMonths = array(
@@ -97,6 +111,20 @@ function _generateMonthsHtml($db, $userId) {
 function displayUserPage($db, $role, $isAdmin, $userId) {
     $header = _loadHtmlTemplate("html/header.html");
     $surname = _getSurNameFromDB($db, $userId);
+    $reportText = '';
+
+    // Если переданы year и month, загружаем отчет
+    if (isset($_GET['year']) && isset($_GET['month'])) {
+        $year = $_GET['year'];
+        $month = $_GET['month'];
+
+        $reports = _getReportsByMonth($db, $userId, $year, $month);
+
+        if (!empty($reports)) {
+            // Берем последний отчет за месяц
+            $reportText = htmlspecialchars($reports[0]['report_text']);
+        }
+    }
 
     if ($role == 2) { // Если роль администратора
         $user_info = "<div>Добро пожаловать, admin!</div>";
@@ -115,8 +143,12 @@ function displayUserPage($db, $role, $isAdmin, $userId) {
     $body = _loadHtmlTemplate($bodyFile);
     $body = str_replace("{DATE}", $monthsHtml, $body);
 
+    // Подставляем текст отчета только если выбран месяц, иначе оставляем пустым
+    $body = str_replace("{REPORT_TEXT}", $reportText, $body);
+
     echo $header . $body;
 }
+
 
 try {
     $db = new SQLite3($dbPath);
@@ -267,6 +299,31 @@ try {
             }
             exit();
         }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
+            if (isset($_SESSION['user_id']) && !empty($_POST['report_text'])) {
+                $userId = $_SESSION['user_id'];
+                $reportText = $_POST['report_text'];
+        
+                $stmt = $db->prepare('INSERT INTO reports (user_id, report_text, send_date) VALUES (:user_id, :report_text, :send_date)');
+                $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
+                $stmt->bindValue(':report_text', $reportText, SQLITE3_TEXT);
+                $stmt->bindValue(':send_date', date('Y-m-d H:i:s'), SQLITE3_TEXT);
+        
+                if ($stmt->execute()) {
+                    echo "<script>alert('Отчет успешно добавлен!');</script>";
+                } else {
+                    echo "<script>alert('Ошибка при добавлении отчета.');</script>";
+                }
+            } else {
+                echo "<script>alert('Текст отчета не может быть пустым.');</script>";
+            }
+        
+            // Перезагрузка страницы для обновления списка отчетов
+            header("Location: index.php");
+            exit();
+        }
+        
     }
 
     // Создание таблиц
@@ -407,13 +464,28 @@ foreach ($names as $name) {
                 echo "<script>alert('Неверное имя пользователя или пароль.');</script>";
                 echo _loadHtmlTemplate("html/authorization.html");
             }
-        } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_SESSION['user_id'])) {
-            $userId = $_SESSION['user_id'];
-            $role = $_SESSION['role_id'];
-            $isAdmin = $_SESSION['is_admin'];
-            displayUserPage($db, $role, $isAdmin, $userId);
-        } else {
-            echo _loadHtmlTemplate("html/authorization.html");
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                // Проверяем, есть ли параметры year и month
+                if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['year']) && isset($_GET['month']) && isset($_SESSION['user_id'])) {
+                    $userId = $_SESSION['user_id'];
+                    $role = $_SESSION['role_id'];
+                    $isAdmin = $_SESSION['is_admin'];
+                
+                    // Обновляем страницу с учетом выбранного отчета
+                    displayUserPage($db, $role, $isAdmin, $userId);
+                    exit();
+                }                
+            
+                // Если year и month не переданы, показываем основную страницу пользователя
+                if (isset($_SESSION['user_id'])) {
+                    $userId = $_SESSION['user_id'];
+                    $role = $_SESSION['role_id'];
+                    $isAdmin = $_SESSION['is_admin'];
+                    displayUserPage($db, $role, $isAdmin, $userId);
+                } else {
+                    echo _loadHtmlTemplate("html/authorization.html");
+                }
+            }
         }
     }
 } catch (Exception $e) {

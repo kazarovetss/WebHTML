@@ -12,13 +12,13 @@
             {DATE}
         </div>
         <div class="enter-container">
-                <div class="enter-field">
-                    <textarea type="text" id="field"></textarea>
-                </div>
+            <form method="POST" action="index.php">
+                <textarea id="reportText" class="enter-field" name="report_text" placeholder="Введите текст отчета...">{REPORT_TEXT}</textarea>
                 <div class="buttons">
-                    <button id="Send" class="button" type="submit" onclick="sendReport()">Отправить</button>
-                    <button id="Clean" class="button" onclick="document.getElementById('field').value = '';">Очистить</button>
+                    <button id="Send" type="submit" name="submit_report">Отправить отчет</button>
+                    <button id="Clean" onclick="document.getElementById('reportText').value = '';">Очистить</button>
                 </div>
+                </form>
         </div>
         <script>
             async function sendReport() {
