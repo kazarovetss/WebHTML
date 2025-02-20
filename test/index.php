@@ -85,11 +85,21 @@ function _generateMonthsHtml($db, $userId) {
         foreach ($allMonths as $num => $name) {
             $monthLinks .= "<span>$name</span> ";
         }
+        // Подгружаем шаблон и заменяем {YEAR} и {MOUNTH}
         $yearHtml = _loadHtmlTemplate("html/date.html");
-        $yearHtml = str_replace("{YEAR}", "<span>NONE</span>", $yearHtml);
+        //$yearHtml = str_replace("{YEAR}", "<span>NONE</span>", $yearHtml);
         $yearHtml = str_replace("{MOUNTH}", $monthLinks, $yearHtml);
         $html .= $yearHtml;
     } else {
+        // Добавляем выпадающий список для выбора года
+        $html .= '<select id="yearSelector" onchange="updateMonths()">';
+        foreach ($years as $year => $months) {
+            $html .= "<option value='$year'>$year</option>";
+        }
+        $html .= '</select>';
+
+        $html .= '<div id="monthPanel">';
+        // Для каждого года создаём блок с месяцами
         foreach ($years as $year => $months) {
             $monthLinks = '';
             foreach ($allMonths as $num => $name) {
@@ -99,14 +109,41 @@ function _generateMonthsHtml($db, $userId) {
                     $monthLinks .= "<span>$name</span> ";
                 }
             }
+            // Подгружаем шаблон для года и заменяем {YEAR} и {MOUNTH}
             $yearHtml = _loadHtmlTemplate("html/date.html");
-            $yearHtml = str_replace("{YEAR}", $year, $yearHtml);
+            //$yearHtml = str_replace("{YEAR}", $year, $yearHtml);
             $yearHtml = str_replace("{MOUNTH}", $monthLinks, $yearHtml);
-            $html .= $yearHtml;
+
+            // Добавляем блок для каждого года с месяцами
+            $html .= "<div id='month-$year' class='month-links' style='display:none;'>$yearHtml</div>";
+        }
+        $html .= '</div>';
+    }
+
+    $html .= "<script>
+    function updateMonths() {
+        var year = document.getElementById('yearSelector').value;
+        var allYearPanels = document.querySelectorAll('.month-links');
+        // Скрываем все панели с месяцами
+        allYearPanels.forEach(function(panel) {
+            panel.style.display = 'none';
+        });
+        // Показываем панель выбранного года
+        var selectedYearPanel = document.getElementById('month-' + year);
+        if (selectedYearPanel) {
+            selectedYearPanel.style.display = 'block';
         }
     }
+    
+    // Инициализация отображения для первого года по умолчанию
+    document.addEventListener('DOMContentLoaded', function() {
+        updateMonths(); // Показать месяцы для первого выбранного года
+    });
+    </script>";
+
     return $html;
 }
+
 
 function displayUserPage($db, $role, $isAdmin, $userId) {
     $header = _loadHtmlTemplate("html/header.html");
@@ -464,6 +501,7 @@ foreach ($names as $name) {
                 echo "<script>alert('Неверное имя пользователя или пароль.');</script>";
                 echo _loadHtmlTemplate("html/authorization.html");
             }
+            
         }
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             // Проверяем, есть ли параметры year и month
