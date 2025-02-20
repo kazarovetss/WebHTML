@@ -464,30 +464,31 @@ foreach ($names as $name) {
                 echo "<script>alert('Неверное имя пользователя или пароль.');</script>";
                 echo _loadHtmlTemplate("html/authorization.html");
             }
-            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-                // Проверяем, есть ли параметры year и month
-                if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['year']) && isset($_GET['month']) && isset($_SESSION['user_id'])) {
-                    $userId = $_SESSION['user_id'];
-                    $role = $_SESSION['role_id'];
-                    $isAdmin = $_SESSION['is_admin'];
-                
-                    // Обновляем страницу с учетом выбранного отчета
-                    displayUserPage($db, $role, $isAdmin, $userId);
-                    exit();
-                }                
+        }
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Проверяем, есть ли параметры year и month
+            if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['year']) && isset($_GET['month']) && isset($_SESSION['user_id'])) {
+                $userId = $_SESSION['user_id'];
+                $role = $_SESSION['role_id'];
+                $isAdmin = $_SESSION['is_admin'];
             
-                // Если year и month не переданы, показываем основную страницу пользователя
-                if (isset($_SESSION['user_id'])) {
-                    $userId = $_SESSION['user_id'];
-                    $role = $_SESSION['role_id'];
-                    $isAdmin = $_SESSION['is_admin'];
-                    displayUserPage($db, $role, $isAdmin, $userId);
-                } else {
-                    echo _loadHtmlTemplate("html/authorization.html");
-                }
+                // Обновляем страницу с учетом выбранного отчета
+                displayUserPage($db, $role, $isAdmin, $userId);
+                exit();
+            }                
+        
+            // Если year и month не переданы, показываем основную страницу пользователя
+            if (isset($_SESSION['user_id'])) {
+                $userId = $_SESSION['user_id'];
+                $role = $_SESSION['role_id'];
+                $isAdmin = $_SESSION['is_admin'];
+                displayUserPage($db, $role, $isAdmin, $userId);
+            } else {
+                echo _loadHtmlTemplate("html/authorization.html");
             }
         }
     }
-} catch (Exception $e) {
-    echo "Не удалось открыть базу данных: " . $e->getMessage();
+}
+catch( Exeption $e){
+    echo "Не удалось открыть базу данных: ". $e->getMesssge();
 }
