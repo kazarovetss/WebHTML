@@ -149,6 +149,7 @@ function displayUserPage($db, $role, $isAdmin, $userId) {
     $header = _loadHtmlTemplate("html/header.html");
     $surname = _getSurNameFromDB($db, $userId);
     $reportText = '';
+    $isReadonly = false;
 
     // Если переданы year и month, загружаем отчет
     if (isset($_GET['year']) && isset($_GET['month'])) {
@@ -160,6 +161,7 @@ function displayUserPage($db, $role, $isAdmin, $userId) {
         if (!empty($reports)) {
             // Берем последний отчет за месяц
             $reportText = htmlspecialchars($reports[0]['report_text']);
+            $isReadonly = true;
         }
     }
 
@@ -181,8 +183,10 @@ function displayUserPage($db, $role, $isAdmin, $userId) {
     $body = str_replace("{DATE}", $monthsHtml, $body);
 
     // Подставляем текст отчета только если выбран месяц, иначе оставляем пустым
+    $readonlyAttr = $isReadonly ? 'readonly' : '';
     $body = str_replace("{REPORT_TEXT}", $reportText, $body);
-
+    $body = str_replace("{READONLY}", $readonlyAttr, $body);
+    
     echo $header . $body;
 }
 
@@ -341,14 +345,32 @@ try {
             if (isset($_SESSION['user_id']) && !empty($_POST['report_text'])) {
                 $userId = $_SESSION['user_id'];
                 $reportText = $_POST['report_text'];
+                $currentMonth = date('Y-m'); // Текущий год и месяц
         
-                $stmt = $db->prepare('INSERT INTO reports (user_id, report_text, send_date) VALUES (:user_id, :report_text, :send_date)');
+                // Проверяем, есть ли уже отчет за этот месяц
+                $stmt = $db->prepare('SELECT report_text FROM reports WHERE user_id = :user_id AND strftime("%Y-%m", send_date) = :current_month');
                 $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
-                $stmt->bindValue(':report_text', $reportText, SQLITE3_TEXT);
-                $stmt->bindValue(':send_date', date('Y-m-d H:i:s'), SQLITE3_TEXT);
+                $stmt->bindValue(':current_month', $currentMonth, SQLITE3_TEXT);
+                $result = $stmt->execute();
+                $existingReport = $result->fetchArray(SQLITE3_ASSOC);
+        
+                if ($existingReport) {
+                    // Если отчет есть, обновляем его, добавляя новый текст
+                    $updatedText = $existingReport['report_text'] . "\n" . $reportText;
+                    $stmt = $db->prepare('UPDATE reports SET report_text = :report_text WHERE user_id = :user_id AND strftime("%Y-%m", send_date) = :current_month');
+                    $stmt->bindValue(':report_text', $updatedText, SQLITE3_TEXT);
+                    $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
+                    $stmt->bindValue(':current_month', $currentMonth, SQLITE3_TEXT);
+                } else {
+                    // Если отчета нет, создаем новый
+                    $stmt = $db->prepare('INSERT INTO reports (user_id, report_text, send_date) VALUES (:user_id, :report_text, :send_date)');
+                    $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
+                    $stmt->bindValue(':report_text', $reportText, SQLITE3_TEXT);
+                    $stmt->bindValue(':send_date', date('Y-m-d H:i:s'), SQLITE3_TEXT);
+                }
         
                 if ($stmt->execute()) {
-                    echo "<script>alert('Отчет успешно добавлен!');</script>";
+                    echo "<script>alert('Отчет успешно обновлен!');</script>";
                 } else {
                     echo "<script>alert('Ошибка при добавлении отчета.');</script>";
                 }
