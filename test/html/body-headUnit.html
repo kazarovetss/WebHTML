@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="html/main_window.css">
+</head>
+<body>
+<main>
+  <div class="main-container">
+    <div class="data-container">
+      {DATE}
+    </div>
+    <div class="enter-container">
+      <form method="POST" action="index.php">
+        <div class="combox">
+          <label>Работник: </label>
+          <select name="employee_id" id="combobox-staff" onchange="this.form.submit();">
+              <option value="">Выберите сотрудника</option>
+            
+          </select>
+      </div>
+      
+      <div class="enter-field">
+        <textarea id="reportText" class="enter-field" name="report_text" placeholder="Введите текст отчета..." {READONLY}>{REPORT_TEXT}</textarea>
+        <div class="statistics">
+          <p id="stat">{statistics}</p>
+        </div>
+      </div>
+      <div class="buttons">
+        <button id="Send" type="submit" name="submit_report">Отправить отчет</button>
+        <button id="Save" class="button">Сохранить</button>
+        <button id="Get" class="button">Получить</button>
+        <div class="isHeadVersion">Версия начальника: </div>
+        <input type="checkbox" id="isHead" name="isHead" checked/>
+        </div>
+      </form>
+      </div>
+      <!-- <div class="exit">
+        <button id="Exit" class="button" type="submit">&laquo;</button>
+    </div>
+    <script>
+      document.getElementById('Exit').addEventListener('click', function() {
+          // Создаем форму и отправляем POST-запрос
+          var form = document.createElement('form');
+          form.method = 'POST';
+          form.action = ''; 
+
+          var input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'logout';
+          input.value = '1';
+
+          form.appendChild(input);
+          document.body.appendChild(form);
+          form.submit();
+      });
+  </script>
+    </div> -->
+    <script>
+      async function sendReport() {
+          const reportText = document.getElementById('field').value;
+  
+          const response = await fetch('index.php', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ report_text: reportText })
+          });
+  
+          if (response.ok) {
+              alert('Отчет отправлен успешно!');
+              document.getElementById('field').value = '';
+          } else {
+              const errorText = await response.text();
+              console.error('Ошибка отправки отчета:', response.status, response.statusText, errorText);
+              alert('Ошибка отправки отчета: ' + errorText);
+          }
+      }
+
+      function loadEmployees() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'employees.php', true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    // Если запрос успешен, заполняем выпадающий список
+                    var employees = JSON.parse(xhr.responseText);
+                    var select = document.getElementById('combobox-staff');
+                    select.innerHTML = '<option value="">Выберите сотрудника</option>'; // Очистить старые опции
+
+                    employees.forEach(function(employee) {
+                        var option = document.createElement('option');
+                        option.value = employee.id;
+                        option.textContent = employee.surname;
+                        select.appendChild(option);
+                    });
+                }
+            };
+            xhr.send();
+        }
+
+        // Загружаем сотрудников при загрузке страницы
+        window.onload = function() {
+            loadEmployees();
+        };
+  </script>
+</main>
+</body>
+</html>

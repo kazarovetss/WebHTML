@@ -19,7 +19,7 @@ function _loadHtmlTemplate($fileName) {
 
 function _getAllEmployees($db) {
     // Получаем всех сотрудников
-    $stmt = $db->prepare('SELECT user_id, surname FROM users WHERE role_id = 3'); 
+    $stmt = $db->prepare('SELECT user_id, surname FROM users WHERE role_id = 4'); 
     $result = $stmt->execute();
 
     $employees = [];
@@ -174,10 +174,11 @@ function displayUserPage($db, $role, $isAdmin, $userId) {
     $surname = _getSurNameFromDB($db, $userId);
     $reportText = '';
     $isDirector = ($role == 1); // Проверяем, является ли пользователь начальником
+    $isHeadUnit = ($role == 4); // Проверяем, является ли пользователь headUnit
 
-    // Если начальник, отображаем выбор сотрудников
-    if ($isDirector) {
-        $employees = _getAllEmployees($db); // Получаем всех сотрудников
+    // Если начальник или headUnit, отображаем выбор сотрудников
+    if ($isDirector || $isHeadUnit) {
+        $employees = _getAllEmployees($db);
         $employeeOptions = "";
         foreach ($employees as $employee) {
             $employeeOptions .= "<option value='{$employee['user_id']}'>{$employee['surname']}</option>";
@@ -208,12 +209,19 @@ function displayUserPage($db, $role, $isAdmin, $userId) {
         }
     }
 
+    // Определяем, какой файл тела загружать
     if ($role == 2) {
         $user_info = "<div>Добро пожаловать, admin!</div>";
         $bodyFile = "html/admin.html";
+    } elseif ($isDirector) {
+        $user_info = "<div>Добро пожаловать, " . htmlspecialchars($surname) . "!</div>";
+        $bodyFile = "html/body-head.html";
+    } elseif ($isHeadUnit) {
+        $user_info = "<div>Добро пожаловать, " . htmlspecialchars($surname) . "!</div>";
+        $bodyFile = "html/body-headUnit.html"; // Добавлена поддержка headUnit
     } else {
         $user_info = "<div>Добро пожаловать, " . htmlspecialchars($surname) . "!</div>";
-        $bodyFile = ($role == 1) ? "html/body-head.html" : "html/body-employee.html";
+        $bodyFile = "html/body-employee.html";
     }
 
     $header = str_replace("{LOGIN-INFO}", $user_info, $header);
@@ -445,7 +453,7 @@ try {
     )");
 
     // Добавление пользователей с булевым признаком is_admin
-    $names = array('Начальник','Работник');
+    $names = array('Начальник','Работник','НачальникСектора');
     $checkRole = $db->prepare('SELECT COUNT(*) AS count FROM roles WHERE name = :name');
     $stmtRole = $db->prepare('INSERT INTO roles (name) VALUES (:name)');
 
@@ -461,7 +469,8 @@ foreach ($names as $name) {
     $users = array(
         array('username' => 'head', 'pass' => 'passhead', 'surname' => 'Иванов', 'name' => 'Иван', 'lastname' => 'Иванович', 'unit' => 143, 'role_id' => 1,'is_admin' => 0),
         array('username' => 'admin', 'pass' => 'passadmin', 'surname' => 'Петров', 'name' => 'Петр', 'lastname' => 'Петрович', 'unit' => 142,'role_id' => 2 ,'is_admin' => 1),
-        array('username' => 'user', 'pass' => 'passuser', 'surname' => 'Сергеев', 'name' => 'Сергей', 'lastname' => 'Сергеевич', 'unit' => 141, 'role_id' => 3,'is_admin' => 0)
+        array('username' => 'user', 'pass' => 'passuser', 'surname' => 'Сергеев', 'name' => 'Сергей', 'lastname' => 'Сергеевич', 'unit' => 141, 'role_id' => 3,'is_admin' => 0),
+        array('username' => 'headUnit', 'pass' => 'passheadunit', 'surname' => 'Сергеев', 'name' => 'Сергей', 'lastname' => 'Сергеевич', 'unit' => 141, 'role_id' => 4,'is_admin' => 0)
     );
 
     $checkUser = $db->prepare('SELECT COUNT(*) AS count FROM users WHERE username = :username');
