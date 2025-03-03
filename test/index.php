@@ -19,7 +19,7 @@ function _loadHtmlTemplate($fileName) {
 
 function _getAllEmployees($db) {
     // Получаем всех сотрудников
-    $stmt = $db->prepare('SELECT user_id, surname FROM users WHERE role_id = 4'); 
+    $stmt = $db->prepare('SELECT user_id, surname FROM users WHERE role_id = 3'); 
     $result = $stmt->execute();
 
     $employees = [];
@@ -153,14 +153,16 @@ function _generateMonthsHtml($db, $userId) {
                 }
             });
         }
+            
     });
 
-    // Сохраняем выбранный месяц при клике
-    document.querySelectorAll('.month-link').forEach(link => {
-        link.addEventListener('click', function() {
-            localStorage.setItem('selectedMonth', this.dataset.month);
-        });
-    });
+    
+
+    document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('month-link')) {
+        localStorage.setItem('selectedMonth', event.target.dataset.month);
+    }
+});
     </script>";
 
     return $html;
@@ -173,16 +175,23 @@ function displayUserPage($db, $role, $isAdmin, $userId) {
     $header = _loadHtmlTemplate("html/header.html");
     $surname = _getSurNameFromDB($db, $userId);
     $reportText = '';
-    $isDirector = ($role == 1); // Проверяем, является ли пользователь начальником
-    $isHeadUnit = ($role == 4); // Проверяем, является ли пользователь headUnit
+    $isDirector = ($role == 1);
+    $isHeadUnit = ($role == 4);
 
-    // Если начальник или headUnit, отображаем выбор сотрудников
+    // Генерация списка сотрудников
     if ($isDirector || $isHeadUnit) {
         $employees = _getAllEmployees($db);
+        
+        // Проверяем, что функция вернула данные
+        if (empty($employees)) {
+            error_log("Нет сотрудников в базе данных или ошибка запроса!");
+        }
+    
         $employeeOptions = "";
         foreach ($employees as $employee) {
             $employeeOptions .= "<option value='{$employee['user_id']}'>{$employee['surname']}</option>";
         }
+        
         $employeeSelect = "
             <div class='combox'>
                 <label>Работник: </label>
@@ -195,21 +204,45 @@ function displayUserPage($db, $role, $isAdmin, $userId) {
     } else {
         $employeeSelect = "";
     }
+    
+    // Скрипт для AJAX-обновления месяцев
+    $employeeSelect .= "
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var employeeSelect = document.getElementById('combobox-staff');
+        employeeSelect.addEventListener('change', function() {
+            var selectedEmployee = this.value;
+            if (selectedEmployee) {
+                fetch('index.php?user_id=' + selectedEmployee)
+                    .then(response => response.text())
+                    .then(data => {
+                        document.getElementById('monthPanel').innerHTML = data;
+                        updateMonths(); // Вызов обновления месяцев после загрузки
+                    })
+                    .catch(error => console.error('Ошибка загрузки данных:', error));
 
-    // Если выбран сотрудник и месяц, загружаем отчет
+            }
+        });
+    });
+    </script>";
+
+    
+    
+
+    // Загружаем отчет, если выбран сотрудник и месяц
     if (isset($_GET['year']) && isset($_GET['month'])) {
         $year = $_GET['year'];
         $month = $_GET['month'];
-        $selectedUserId = isset($_GET['employee_id']) ? $_GET['employee_id'] : $userId;
+        $selectedUserId = isset($_GET['user_id']) ? $_GET['user_id'] : $userId;
 
         $reports = _getReportsByMonth($db, $selectedUserId, $year, $month);
-
         if (!empty($reports)) {
             $reportText = htmlspecialchars($reports[0]['report_text']);
         }
     }
 
-    // Определяем, какой файл тела загружать
+
+    // Определяем, какой файл загружать
     if ($role == 2) {
         $user_info = "<div>Добро пожаловать, admin!</div>";
         $bodyFile = "html/admin.html";
@@ -218,7 +251,7 @@ function displayUserPage($db, $role, $isAdmin, $userId) {
         $bodyFile = "html/body-head.html";
     } elseif ($isHeadUnit) {
         $user_info = "<div>Добро пожаловать, " . htmlspecialchars($surname) . "!</div>";
-        $bodyFile = "html/body-headUnit.html"; // Добавлена поддержка headUnit
+        $bodyFile = "html/body-headUnit.html";
     } else {
         $user_info = "<div>Добро пожаловать, " . htmlspecialchars($surname) . "!</div>";
         $bodyFile = "html/body-employee.html";
@@ -231,8 +264,26 @@ function displayUserPage($db, $role, $isAdmin, $userId) {
     $body = str_replace("{EMPLOYEE_SELECT}", $employeeSelect, $body);
     $body = str_replace("{REPORT_TEXT}", $reportText, $body);
 
+    if (isset($_GET['user_id'])) {
+        $userId = (int)$_GET['user_id'];
+        
+        // Получаем HTML для месяцев и выводим
+        $body = str_replace("{DATE}", $monthsHtml, $body);
+        $body = str_replace("{EMPLOYEE_SELECT}", $employeeSelect, $body);
+    $body = str_replace("{REPORT_TEXT}", $reportText, $body);
+        exit(); // Завершаем выполнение, чтобы не загружать страницу дважды
+    }
+
     echo $header . $body;
 }
+
+if (isset($_GET['user_id']) && !isset($_GET['year']) && !isset($_GET['month'])) {
+    $userId = (int)$_GET['user_id'];
+    $monthsHtml = _generateMonthsHtml($db, $userId);
+    echo $monthsHtml; // Отправляем только HTML списка месяцев
+    exit(); // Завершаем выполнение
+}
+
 
 
 
@@ -572,6 +623,8 @@ foreach ($names as $name) {
             
         }
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            
+           
             // Проверяем, есть ли параметры year и month
             if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['year']) && isset($_GET['month']) && isset($_SESSION['user_id'])) {
                 $userId = $_SESSION['user_id'];
@@ -592,6 +645,7 @@ foreach ($names as $name) {
             } else {
                 echo _loadHtmlTemplate("html/authorization.html");
             }
+            
         }
     }
 }

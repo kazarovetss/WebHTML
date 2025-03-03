@@ -13,13 +13,10 @@
     </div>
     <div class="enter-container">
       <form method="POST" action="index.php">
-        <div class="combox">
-          <label>Работник: </label>
-          <select name="employee_id" id="combobox-staff" onchange="this.form.submit();">
-              <option value="">Выберите сотрудника</option>
-            
-          </select>
+        <div class="employee-section">
+          {EMPLOYEE_SELECT}
       </div>
+      
       
       <div class="enter-field">
         <textarea id="reportText" class="enter-field" name="report_text" placeholder="Введите текст отчета..." {READONLY}>{REPORT_TEXT}</textarea>
