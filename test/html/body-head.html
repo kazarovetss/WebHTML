@@ -13,11 +13,14 @@
     </div>
     <div class="enter-container">
       <form method="POST" action="index.php">
-      <div class="combox"><label>Работник: </label>
-        <select name="combobox" id="combobox-staff">
-          <option value="staff">Иванов</option>
-        </select>
+        <div class="combox">
+          <label>Работник: </label>
+          <select name="employee_id" id="combobox-staff" onchange="this.form.submit();">
+              <option value="">Выберите сотрудника</option>
+            
+          </select>
       </div>
+      
       <div class="enter-field">
         <textarea id="reportText" class="enter-field" name="report_text" placeholder="Введите текст отчета..." {READONLY}>{REPORT_TEXT}</textarea>
         <div class="statistics">
@@ -75,6 +78,32 @@
               alert('Ошибка отправки отчета: ' + errorText);
           }
       }
+
+      function loadEmployees() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'employees.php', true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    // Если запрос успешен, заполняем выпадающий список
+                    var employees = JSON.parse(xhr.responseText);
+                    var select = document.getElementById('combobox-staff');
+                    select.innerHTML = '<option value="">Выберите сотрудника</option>'; // Очистить старые опции
+
+                    employees.forEach(function(employee) {
+                        var option = document.createElement('option');
+                        option.value = employee.id;
+                        option.textContent = employee.surname;
+                        select.appendChild(option);
+                    });
+                }
+            };
+            xhr.send();
+        }
+
+        // Загружаем сотрудников при загрузке страницы
+        window.onload = function() {
+            loadEmployees();
+        };
   </script>
 </main>
 </body>

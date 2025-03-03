@@ -17,6 +17,18 @@ function _loadHtmlTemplate($fileName) {
     }
 }
 
+function _getAllEmployees($db) {
+    // Получаем всех сотрудников
+    $stmt = $db->prepare('SELECT user_id, surname FROM users WHERE role_id = 3'); 
+    $result = $stmt->execute();
+
+    $employees = [];
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        $employees[] = $row;
+    }
+    return $employees;
+}
+
 // Функции для работы с базой данных
 function _getUsrNameFromDB($db, $userId) {
     $stmt = $db->prepare('SELECT username FROM users WHERE user_id = :user_id');
@@ -64,6 +76,7 @@ function _getReportsByMonth($db, $userId, $year, $month) {
 
 function _generateMonthsHtml($db, $userId) {
     $availableMonths = _getAvailableMonths($db, $userId);
+    $currentYear = date('Y'); // Получаем текущий год
     $allMonths = array(
         '01' => 'Январь', '02' => 'Февраль', '03' => 'Март', '04' => 'Апрель',
         '05' => 'Май', '06' => 'Июнь', '07' => 'Июль', '08' => 'Август',
@@ -79,65 +92,74 @@ function _generateMonthsHtml($db, $userId) {
         $years[$year][] = $monthNum;
     }
 
+    // Если доступных месяцев нет, добавляем текущий год в список
+    if (empty($years)) {
+        $years[$currentYear] = array();
+    }
+
     $html = '';
-    if (empty($availableMonths)) {
+
+    // Добавляем выпадающий список для выбора года
+    $html .= '<select id="yearSelector" onchange="updateMonths()">';
+    foreach ($years as $year => $months) {
+        $html .= "<option value='$year'>$year</option>";
+    }
+    $html .= '</select>';
+
+    $html .= '<div id="monthPanel">';
+    
+    // Генерация блоков с месяцами
+    foreach ($years as $year => $months) {
         $monthLinks = '';
         foreach ($allMonths as $num => $name) {
-            $monthLinks .= "<span>$name</span> ";
-        }
-        // Подгружаем шаблон и заменяем {YEAR} и {MOUNTH}
-        $yearHtml = _loadHtmlTemplate("html/date.html");
-        //$yearHtml = str_replace("{YEAR}", "<span>NONE</span>", $yearHtml);
-        $yearHtml = str_replace("{MOUNTH}", $monthLinks, $yearHtml);
-        $html .= $yearHtml;
-    } else {
-        // Добавляем выпадающий список для выбора года
-        $html .= '<select id="yearSelector" onchange="updateMonths()">';
-        foreach ($years as $year => $months) {
-            $html .= "<option value='$year'>$year</option>";
-        }
-        $html .= '</select>';
-
-        $html .= '<div id="monthPanel">';
-        // Для каждого года создаём блок с месяцами
-        foreach ($years as $year => $months) {
-            $monthLinks = '';
-            foreach ($allMonths as $num => $name) {
-                if (in_array($num, $months)) {
-                    $monthLinks .= "<a href='index.php?year=$year&month=$num'>$name</a> ";
-                } else {
-                    $monthLinks .= "<span>$name</span> ";
-                }
+            if (in_array($num, $months)) {
+                $monthLinks .= "<a href='index.php?year=$year&month=$num' class='month-link' data-year='$year' data-month='$num'>$name</a> ";
+            } else {
+                $monthLinks .= "<span>$name</span> ";
             }
-            // Подгружаем шаблон для года и заменяем {YEAR} и {MOUNTH}
-            $yearHtml = _loadHtmlTemplate("html/date.html");
-            //$yearHtml = str_replace("{YEAR}", $year, $yearHtml);
-            $yearHtml = str_replace("{MOUNTH}", $monthLinks, $yearHtml);
-
-            // Добавляем блок для каждого года с месяцами
-            $html .= "<div id='month-$year' class='month-links' style='display:none;'>$yearHtml</div>";
         }
-        $html .= '</div>';
+        $yearHtml = _loadHtmlTemplate("html/date.html");
+        $yearHtml = str_replace("{MOUNTH}", $monthLinks, $yearHtml);
+
+        $html .= "<div id='month-$year' class='month-links' style='display:none;'>$yearHtml</div>";
     }
+
+    $html .= '</div>';
 
     $html .= "<script>
     function updateMonths() {
         var year = document.getElementById('yearSelector').value;
-        var allYearPanels = document.querySelectorAll('.month-links');
-        // Скрываем все панели с месяцами
-        allYearPanels.forEach(function(panel) {
-            panel.style.display = 'none';
-        });
-        // Показываем панель выбранного года
+        localStorage.setItem('selectedYear', year); // Сохраняем год
+
+        document.querySelectorAll('.month-links').forEach(panel => panel.style.display = 'none');
         var selectedYearPanel = document.getElementById('month-' + year);
         if (selectedYearPanel) {
             selectedYearPanel.style.display = 'block';
         }
     }
-    
-    // Инициализация отображения для первого года по умолчанию
+
+    // Восстанавливаем сохраненные данные при загрузке страницы
     document.addEventListener('DOMContentLoaded', function() {
-        updateMonths(); // Показать месяцы для первого выбранного года
+        var savedYear = localStorage.getItem('selectedYear') || '$currentYear';
+        document.getElementById('yearSelector').value = savedYear;
+        updateMonths();
+
+        // Восстанавливаем выбранный месяц
+        var savedMonth = localStorage.getItem('selectedMonth');
+        if (savedMonth) {
+            document.querySelectorAll('.month-link').forEach(link => {
+                if (link.dataset.year === savedYear && link.dataset.month === savedMonth) {
+                    link.classList.add('selected'); // Подсветка активного месяца
+                }
+            });
+        }
+    });
+
+    // Сохраняем выбранный месяц при клике
+    document.querySelectorAll('.month-link').forEach(link => {
+        link.addEventListener('click', function() {
+            localStorage.setItem('selectedMonth', this.dataset.month);
+        });
     });
     </script>";
 
@@ -145,50 +167,65 @@ function _generateMonthsHtml($db, $userId) {
 }
 
 
+
+
 function displayUserPage($db, $role, $isAdmin, $userId) {
     $header = _loadHtmlTemplate("html/header.html");
     $surname = _getSurNameFromDB($db, $userId);
     $reportText = '';
-    $isReadonly = false;
+    $isDirector = ($role == 1); // Проверяем, является ли пользователь начальником
 
-    // Если переданы year и month, загружаем отчет
+    // Если начальник, отображаем выбор сотрудников
+    if ($isDirector) {
+        $employees = _getAllEmployees($db); // Получаем всех сотрудников
+        $employeeOptions = "";
+        foreach ($employees as $employee) {
+            $employeeOptions .= "<option value='{$employee['user_id']}'>{$employee['surname']}</option>";
+        }
+        $employeeSelect = "
+            <div class='combox'>
+                <label>Работник: </label>
+                <select name='employee_id' id='combobox-staff'>
+                    <option value=''>Выберите сотрудника</option>
+                    $employeeOptions
+                </select>
+            </div>
+        ";
+    } else {
+        $employeeSelect = "";
+    }
+
+    // Если выбран сотрудник и месяц, загружаем отчет
     if (isset($_GET['year']) && isset($_GET['month'])) {
         $year = $_GET['year'];
         $month = $_GET['month'];
+        $selectedUserId = isset($_GET['employee_id']) ? $_GET['employee_id'] : $userId;
 
-        $reports = _getReportsByMonth($db, $userId, $year, $month);
+        $reports = _getReportsByMonth($db, $selectedUserId, $year, $month);
 
         if (!empty($reports)) {
-            // Берем последний отчет за месяц
             $reportText = htmlspecialchars($reports[0]['report_text']);
-            $isReadonly = true;
         }
     }
 
-    if ($role == 2) { // Если роль администратора
+    if ($role == 2) {
         $user_info = "<div>Добро пожаловать, admin!</div>";
-        $bodyFile = "html/admin.html"; // Приоритет для администратора
+        $bodyFile = "html/admin.html";
     } else {
         $user_info = "<div>Добро пожаловать, " . htmlspecialchars($surname) . "!</div>";
-        if ($role == 1) {
-            $bodyFile = "html/body-head.html"; // Вторая проверка на руководителя
-        } else {
-            $bodyFile = "html/body-employee.html";
-        }
+        $bodyFile = ($role == 1) ? "html/body-head.html" : "html/body-employee.html";
     }
 
     $header = str_replace("{LOGIN-INFO}", $user_info, $header);
     $monthsHtml = _generateMonthsHtml($db, $userId);
     $body = _loadHtmlTemplate($bodyFile);
     $body = str_replace("{DATE}", $monthsHtml, $body);
-
-    // Подставляем текст отчета только если выбран месяц, иначе оставляем пустым
-    $readonlyAttr = $isReadonly ? 'readonly' : '';
+    $body = str_replace("{EMPLOYEE_SELECT}", $employeeSelect, $body);
     $body = str_replace("{REPORT_TEXT}", $reportText, $body);
-    $body = str_replace("{READONLY}", $readonlyAttr, $body);
-    
+
     echo $header . $body;
 }
+
 
 
 try {
