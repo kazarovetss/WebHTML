@@ -6,6 +6,7 @@ date_default_timezone_set('Europe/Minsk');
 
 // Путь к файлу базы данных
 $dbPath = 'db/html_test.db';
+$db = new SQLite3('db/html_test.db');
 $dir = __DIR__ . '/html_test';
 
 // Функция загрузки шаблона с проверкой наличия файла
@@ -113,7 +114,7 @@ function _generateMonthsHtml($db, $userId) {
         $monthLinks = '';
         foreach ($allMonths as $num => $name) {
             if (in_array($num, $months)) {
-                $monthLinks .= "<a href='index.php?year=$year&month=$num' class='month-link' data-year='$year' data-month='$num'>$name</a> ";
+                $monthLinks .= "<a href='#' class='month-link' data-year='$year' data-month='$num'>$name</a> ";
             } else {
                 $monthLinks .= "<span>$name</span> ";
             }
@@ -156,7 +157,38 @@ function _generateMonthsHtml($db, $userId) {
             
     });
 
-    
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.month-link').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault(); // Останавливаем переход по ссылке
+
+            var year = this.dataset.year;
+            var month = this.dataset.month;
+            var userId = document.getElementById('combobox-staff')?.value || '<?= $userId ?>';
+
+            localStorage.setItem('selectedMonth', month); // Сохраняем выбранный месяц
+
+            fetch(`index.php?year=${year}&month=${month}&user_id=${userId}`)
+                .then(response => response.text())
+                .then(data => {
+                    // Создаем временный элемент для парсинга HTML
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(data, 'text/html');
+                    
+                    // Ищем textarea с отчетом в загруженном HTML
+                    var reportText = doc.querySelector('#reportText');
+                    if (reportText) {
+                        document.getElementById('reportText').value = reportText.value; // Обновляем поле вывода
+                    }
+                })
+                .catch(error => console.error('Ошибка загрузки отчета:', error));
+        });
+    });
+});
+
+
+
 
     document.addEventListener('click', function(event) {
     if (event.target.classList.contains('month-link')) {
@@ -213,19 +245,21 @@ function displayUserPage($db, $role, $isAdmin, $userId) {
         employeeSelect.addEventListener('change', function() {
             var selectedEmployee = this.value;
             if (selectedEmployee) {
-                fetch('index.php?user_id=' + selectedEmployee)
+                // Делаем запрос на сервер с параметром user_id и action
+                fetch('index.php?user_id=' + selectedEmployee + '&action=getEmployeeMonths')
                     .then(response => response.text())
                     .then(data => {
                         document.getElementById('monthPanel').innerHTML = data;
                         updateMonths(); // Вызов обновления месяцев после загрузки
                     })
                     .catch(error => console.error('Ошибка загрузки данных:', error));
-
             }
         });
     });
     </script>";
 
+
+    
     
     
 
@@ -623,20 +657,31 @@ foreach ($names as $name) {
             
         }
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            
-           
-            // Проверяем, есть ли параметры year и month
-            if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['year']) && isset($_GET['month']) && isset($_SESSION['user_id'])) {
+
+            // Сначала обрабатываем JSON-запрос (иначе вернется HTML!)
+            if (isset($_GET['action']) && $_GET['action'] === 'getEmployees') {
+                header('Content-Type: application/json; charset=utf-8'); // Отправляем JSON
+                header('Access-Control-Allow-Origin: *'); // Разрешаем кросс-доменные запросы (если нужно)
+        
+                $employees = _getAllEmployees($db); // Функция получения сотрудников из БД
+        
+                echo json_encode($employees, JSON_UNESCAPED_UNICODE); // Кодируем в JSON без экранирования
+                exit(); // Завершаем выполнение, чтобы не отправлять HTML
+            }
+        
+            // Дальше обрабатываем стандартные GET-запросы
+        
+            if (isset($_GET['year']) && isset($_GET['month']) && isset($_SESSION['user_id'])) {
                 $userId = $_SESSION['user_id'];
                 $role = $_SESSION['role_id'];
                 $isAdmin = $_SESSION['is_admin'];
-            
-                // Обновляем страницу с учетом выбранного отчета
+        
+                // Отображаем страницу с отчетом
                 displayUserPage($db, $role, $isAdmin, $userId);
                 exit();
             }                
         
-            // Если year и month не переданы, показываем основную страницу пользователя
+            // Если нет параметров year и month, показываем главную страницу пользователя
             if (isset($_SESSION['user_id'])) {
                 $userId = $_SESSION['user_id'];
                 $role = $_SESSION['role_id'];
@@ -645,8 +690,8 @@ foreach ($names as $name) {
             } else {
                 echo _loadHtmlTemplate("html/authorization.html");
             }
-            
         }
+        
     }
 }
 catch( Exeption $e){

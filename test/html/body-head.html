@@ -77,26 +77,33 @@
       }
 
       function loadEmployees() {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', 'employees.php', true);
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    // Если запрос успешен, заполняем выпадающий список
-                    var employees = JSON.parse(xhr.responseText);
-                    var select = document.getElementById('combobox-staff');
-                    select.innerHTML = '<option value="">Выберите сотрудника</option>'; // Очистить старые опции
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'index.php?action=getEmployees', true); // Запрашиваем данные из index.php
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                var employees = JSON.parse(xhr.responseText); // Парсим JSON
+                var select = document.getElementById('combobox-staff');
+                select.innerHTML = '<option value="">Выберите сотрудника</option>'; // Очищаем список
 
-                    employees.forEach(function(employee) {
-                        var option = document.createElement('option');
-                        option.value = employee.id;
-                        option.textContent = employee.surname;
-                        select.appendChild(option);
-                    });
-                }
-            };
-            xhr.send();
+                employees.forEach(function(employee) {
+                    var option = document.createElement('option');
+                    option.value = employee.id;
+                    option.textContent = employee.surname;
+                    select.appendChild(option);
+                });
+            } catch (e) {
+                console.error('Ошибка парсинга JSON:', e);
+            }
+        } else {
+            console.error('Ошибка загрузки сотрудников:', xhr.status);
         }
-
+    };
+    xhr.onerror = function() {
+        console.error('Ошибка запроса к серверу');
+    };
+    xhr.send();
+}
         // Загружаем сотрудников при загрузке страницы
         window.onload = function() {
             loadEmployees();
